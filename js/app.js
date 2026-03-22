@@ -1,5 +1,7 @@
+// ─── CONFIGURAÇÃO ─────────────────────────────────────────
 const API_URL = "https://verit-orpin.vercel.app/api/buscar";
 const AFILIADO = "matt_word=ed20240607152234&matt_tool=53313647";
+// ──────────────────────────────────────────────────────────
 
 const CATS = [
   { id: "MLB5672", name: "Acessórios para Veículos" },
@@ -32,9 +34,10 @@ const CATS = [
 ];
 
 let allProducts = [];
-let modoAtivo = "categoria";
-let countdownInterval = null;
+let modoAtivo = "ml-categoria";
+let countdownInt = null;
 
+// ─── UTILS ────────────────────────────────────────────────
 const fmt = (n) =>
   "R$ " +
   n.toLocaleString("pt-BR", {
@@ -42,19 +45,18 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
-function linkAfiliado(url) {
+function linkML(url) {
   if (!url || url.includes("undefined")) return null;
-  let finalUrl = url;
-  // Corrige domínio para itens diretos MLB-XXXXXXX
-  if (url.match(/www\.mercadolivre\.com\.br\/MLB-/)) {
-    finalUrl = url.replace(
+  let u = url;
+  if (u.match(/mercadolivre\.com\.br\/MLB-/)) {
+    u = u.replace(
       "www.mercadolivre.com.br/MLB-",
       "produto.mercadolivre.com.br/MLB-",
     );
   }
-  return finalUrl.includes(AFILIADO)
-    ? finalUrl
-    : finalUrl + (finalUrl.includes("?") ? "&" : "?") + AFILIADO;
+  return u.includes(AFILIADO)
+    ? u
+    : u + (u.includes("?") ? "&" : "?") + AFILIADO;
 }
 
 function setStatus(msg, type) {
@@ -63,41 +65,16 @@ function setStatus(msg, type) {
   el.className = "status" + (type ? " " + type : "");
 }
 
-function setTab(tab) {
-  modoAtivo = tab;
-  document
-    .querySelectorAll(".tab-btn")
-    .forEach((b) => b.classList.remove("active"));
-  document
-    .querySelector("[onclick=\"setTab('" + tab + "')\"]")
-    .classList.add("active");
-  document.getElementById("catRow").style.display =
-    tab === "categoria" ? "" : "none";
-  if (tab === "relampago") carregarRelampago();
-  else stopCountdowns();
-}
-
-function loadCategories() {
-  const sel = document.getElementById("categorySelect");
-  CATS.forEach((c) => {
-    const o = document.createElement("option");
-    o.value = c.id;
-    o.textContent = c.name;
-    sel.appendChild(o);
-  });
-}
-
-// ── COUNTDOWN ──────────────────────────────────────────────
 function stopCountdowns() {
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
+  if (countdownInt) {
+    clearInterval(countdownInt);
+    countdownInt = null;
   }
 }
 
-function formatCountdown(expiresAt) {
-  if (!expiresAt) return null;
-  const diff = new Date(expiresAt) - new Date();
+function formatCountdown(exp) {
+  if (!exp) return null;
+  const diff = new Date(exp) - new Date();
   if (diff <= 0) return "Encerrada";
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
@@ -113,7 +90,7 @@ function formatCountdown(expiresAt) {
 
 function startCountdowns() {
   stopCountdowns();
-  countdownInterval = setInterval(() => {
+  countdownInt = setInterval(() => {
     document.querySelectorAll(".countdown-timer").forEach((el) => {
       const txt = formatCountdown(el.dataset.expires);
       el.textContent = txt || "";
@@ -124,8 +101,43 @@ function startCountdowns() {
     });
   }, 1000);
 }
-// ───────────────────────────────────────────────────────────
 
+// ─── TABS ─────────────────────────────────────────────────
+function setTab(tab) {
+  modoAtivo = tab;
+  stopCountdowns();
+  document
+    .querySelectorAll(".tab-btn")
+    .forEach((b) => b.classList.remove("active"));
+  document
+    .querySelector("[onclick=\"setTab('" + tab + "')\"]")
+    .classList.add("active");
+  document.getElementById("catRow").style.display =
+    tab === "ml-categoria" ? "" : "none";
+
+  if (tab === "ml-relampago") carregarML();
+  else if (tab === "shopee-relampago") carregarShopee();
+  else {
+    allProducts = [];
+    document.getElementById("output").innerHTML =
+      '<div class="empty-state"><div class="icon">🛍</div>Selecione uma categoria e clique em Buscar.</div>';
+    document.getElementById("countBadge").textContent = "";
+    setStatus("");
+  }
+}
+
+// ─── CATEGORIAS ───────────────────────────────────────────
+function loadCategories() {
+  const sel = document.getElementById("categorySelect");
+  CATS.forEach((c) => {
+    const o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = c.name;
+    sel.appendChild(o);
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────
 function renderProducts() {
   const only = document.getElementById("onlyDiscount").checked;
   const list = only
@@ -149,30 +161,47 @@ function renderProducts() {
   out.innerHTML =
     '<div class="grid">' +
     list
-      .map(function (p) {
-        var thumb = p.thumbnail
+      .map((p) => {
+        const isShopee = p.platform === "shopee";
+        const thumb = p.thumbnail
           ? p.thumbnail.replace("http://", "https://")
           : "";
-        var disc = p.original_price && p.original_price > p.price;
-        var pct =
+        const disc = p.original_price && p.original_price > p.price;
+        const pct =
           p.discount ||
           (disc
-            ? "-" + Math.round((1 - p.price / p.original_price) * 100) + "% OFF"
+            ? Math.round((1 - p.price / p.original_price) * 100) + "% OFF"
             : "");
-        var url = linkAfiliado(p.permalink);
-        var linkAttr = url
+        const url = isShopee ? p.permalink : linkML(p.permalink);
+        const linkAttr = url
           ? 'href="' + url + '" target="_blank" rel="noopener"'
           : 'href="#"';
-        var countdown = p.expires_at
-          ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
-            "<span style=\"font-size:10px;background:#FFF1CB;color:#000;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:500;\">⚡ RELÂMPAGO</span>" +
+
+        const platformBadge =
+          '<span class="platform-badge ' +
+          (isShopee ? "platform-shopee" : "platform-ml") +
+          '">' +
+          (isShopee ? "🛍 Shopee" : "⚡ Mercado Livre") +
+          "</span>";
+
+        const countdown = p.expires_at
+          ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
             '<span class="countdown-timer" data-expires="' +
             p.expires_at +
-            '" style="font-size:11px;font-family:\'DM Mono\',monospace;color:var(--red);font-weight:500;">' +
+            '" ' +
+            "style=\"font-size:11px;font-family:'DM Mono',monospace;color:var(--red);font-weight:500;\">" +
             (formatCountdown(p.expires_at) || "") +
-            "</span>" +
-            "</div>"
+            "</span></div>"
           : "";
+
+        const rating =
+          isShopee && p.rating
+            ? '<div class="rating">⭐ ' +
+              p.rating.toFixed(1) +
+              (p.stock ? " · " + p.stock + " em estoque" : "") +
+              "</div>"
+            : "";
+
         return (
           '<div class="card">' +
           "<a " +
@@ -181,15 +210,17 @@ function renderProducts() {
           thumb +
           '" alt="" loading="lazy"/></a>' +
           '<div class="card-body">' +
+          platformBadge +
           countdown +
           (p.brand
-            ? "<div style=\"font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px;\">" +
+            ? "<div style=\"font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;\">" +
               p.brand +
               "</div>"
             : "") +
           '<div class="card-title">' +
           p.title +
           "</div>" +
+          rating +
           '<div class="card-prices">' +
           (disc
             ? '<div class="original">' + fmt(p.original_price) + "</div>"
@@ -197,53 +228,82 @@ function renderProducts() {
           '<div class="current">' +
           fmt(p.price) +
           "</div>" +
-          (pct ? '<span class="badge">⚡ ' + pct + "</span>" : "") +
+          (pct
+            ? '<span class="badge">' +
+              (isShopee ? "🛍" : "⚡") +
+              " " +
+              pct +
+              "</span>"
+            : "") +
           "</div></div>" +
           '<a class="card-link" ' +
           linkAttr +
-          ">ver no mercado livre →</a>" +
+          ">ver oferta →</a>" +
           "</div>"
         );
       })
       .join("") +
     "</div>";
 
-  if (modoAtivo === "relampago") startCountdowns();
+  if (modoAtivo !== "ml-categoria") startCountdowns();
 }
 
-function carregarRelampago() {
-  stopCountdowns();
-  setStatus("Carregando ofertas relâmpago...", "loading");
-  document.getElementById("output").innerHTML =
-    '<div class="empty-state">Carregando...</div>';
-  document.getElementById("countBadge").textContent = "";
-
-  allProducts = (window.OFERTAS_RELAMPAGO || []).filter(
+// ─── LOADERS ──────────────────────────────────────────────
+function carregarML() {
+  allProducts = (window.OFERTAS_ML || []).filter(
     (p) =>
       p.title && p.price && p.permalink && !p.permalink.includes("undefined"),
   );
-
   if (!allProducts.length) {
-    setStatus("Nenhuma oferta relâmpago disponível.", "error");
+    setStatus("Nenhuma oferta relâmpago do ML disponível.", "error");
     document.getElementById("output").innerHTML =
       '<div class="empty-state"><div class="icon">⚡</div>Nenhuma oferta no momento.</div>';
-  } else {
-    const primeiro = allProducts.find((p) => p.expires_at);
-    if (primeiro) {
-      const expira = new Date(primeiro.expires_at);
-      setStatus(
-        allProducts.length +
-          " ofertas relâmpago — encerram às " +
-          expira.toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-      );
-    } else {
-      setStatus(allProducts.length + " ofertas relâmpago carregadas.");
-    }
-    renderProducts();
+    return;
   }
+  const primeiro = allProducts.find((p) => p.expires_at);
+  if (primeiro) {
+    const expira = new Date(primeiro.expires_at);
+    setStatus(
+      allProducts.length +
+        " ofertas ML — encerram às " +
+        expira.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+    );
+  } else {
+    setStatus(allProducts.length + " ofertas relâmpago ML carregadas.");
+  }
+  document.getElementById("countBadge").textContent = "";
+  renderProducts();
+}
+
+function carregarShopee() {
+  allProducts = (window.OFERTAS_SHOPEE || []).filter(
+    (p) => p.title && p.price && p.permalink,
+  );
+  if (!allProducts.length) {
+    setStatus("Nenhuma oferta flash da Shopee disponível.", "error");
+    document.getElementById("output").innerHTML =
+      '<div class="empty-state"><div class="icon">🛍</div>Nenhuma oferta no momento.</div>';
+    return;
+  }
+  const primeiro = allProducts.find((p) => p.expires_at);
+  if (primeiro) {
+    const expira = new Date(primeiro.expires_at);
+    setStatus(
+      allProducts.length +
+        " ofertas Shopee — encerram às " +
+        expira.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+    );
+  } else {
+    setStatus(allProducts.length + " ofertas flash Shopee carregadas.");
+  }
+  document.getElementById("countBadge").textContent = "";
+  renderProducts();
 }
 
 async function buscarProdutos() {
@@ -261,7 +321,7 @@ async function buscarProdutos() {
   setStatus("Buscando produtos...", "loading");
 
   try {
-    const res = await fetch(`${API_URL}?categoria=${catId}`);
+    const res = await fetch(API_URL + "?categoria=" + catId);
     if (!res.ok) throw new Error("Erro HTTP " + res.status);
     const data = await res.json();
     if (data.error) {
@@ -288,6 +348,7 @@ async function buscarProdutos() {
   btn.disabled = false;
 }
 
+// ─── INIT ─────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   loadCategories();
 });

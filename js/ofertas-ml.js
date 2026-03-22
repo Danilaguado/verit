@@ -1,6 +1,6 @@
 // Ofertas Relâmpago — atualizado em 22/03/2026
 // Para atualizar: rode o script no console do ML e substitua o array abaixo
-var OFERTAS_RELAMPAGO = [
+var OFERTAS_ML = [
   {
     id: "MLB5325422870",
     title: "Tênis Kappa Pulse Unissex Academia Caminhada",
