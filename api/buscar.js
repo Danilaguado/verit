@@ -49,7 +49,7 @@ export default async function handler(request, response) {
       return response.status(200).json({ results: [] });
     }
 
-    // 2. Para cada produto busca: detalhes do produto + melhor item (com preço)
+    // 2. Para cada produto busca detalhes + melhor item com preço
     const results = await Promise.all(
       productIds.map(async (pid) => {
         const [prodRes, itemsRes] = await Promise.all([
@@ -65,9 +65,9 @@ export default async function handler(request, response) {
         const price = item?.price ?? null;
         const original_price = item?.original_price ?? null;
         const itemId = item?.item_id ?? null;
-        const permalink = itemId
-          ? `https://www.mercadolivre.com.br/MLB-${itemId.replace("MLB", "")}`
-          : `https://www.mercadolivre.com.br/p/${pid}`;
+
+        // Permalink correto: usa o product page do ML
+        const permalink = `https://www.mercadolivre.com.br/p/${pid}`;
 
         return {
           id: pid,
