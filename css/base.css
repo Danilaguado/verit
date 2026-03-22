@@ -2,12 +2,24 @@
    BASE: Variáveis e Reset
 ═══════════════════════════════════════════════════ */
 :root {
+  /* Paleta principal — inspirada na imagem enviada */
+  --primary: #e8304a; /* vermelho-rosa vibrante */
+  --primary-2: #f26522; /* laranja */
+  --primary-grad: linear-gradient(135deg, #e8304a 0%, #f26522 100%);
+
+  /* Superfícies */
   --bg: #f5f3ee;
   --surface: #fff;
   --border: #e0ddd6;
+
+  /* Texto */
   --text: #1a1916;
   --muted: #7a776f;
+
+  /* Destaque */
   --accent: #ffe000;
+
+  /* Status */
   --green: #1a7a3a;
   --green-bg: #e6f4eb;
   --red: #c0392b;
@@ -24,7 +36,6 @@ body {
   font-family: "DM Sans", sans-serif;
   background: var(--bg);
   color: var(--text);
-  /* SEM overflow hidden — a página rola normalmente */
 }
 
 .app {

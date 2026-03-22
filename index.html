@@ -2,39 +2,89 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>Flash Ofertas</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#e8304a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <!-- Favicon (substitua em assets/favicon.png) -->
+    <link rel="icon" type="image/png" href="./assets/favicon.png" />
+    <link rel="apple-touch-icon" href="./assets/favicon.png" />
+
+    <!-- Fontes -->
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- CSS modular por seção -->
+
+    <!-- CSS modular -->
     <link rel="stylesheet" href="./css/base.css" />
     <link rel="stylesheet" href="./css/header.css" />
+    <link rel="stylesheet" href="./css/home.css" />
     <link rel="stylesheet" href="./css/controls.css" />
     <link rel="stylesheet" href="./css/products.css" />
     <link rel="stylesheet" href="./css/pagination.css" />
   </head>
   <body>
+    <!-- ── HERO overlay (apresentação inicial) ────────── -->
+    <div id="heroOverlay" style="display: none"></div>
+
     <div class="app">
+      <!-- ── HEADER ──────────────────────────────────── -->
       <header>
         <div class="logo">flash<span>_ofertas</span></div>
+        <div class="header-search">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="🔍 Buscar ofertas..."
+          />
+        </div>
+        <button class="btn-login" onclick="Auth.openLogin()" title="Entrar">
+          👤
+        </button>
         <a
           href="./tools/extrator-amazon.html"
           target="_blank"
           class="extrator-btn"
-          >🛒 Extrator</a
+          >🛒</a
         >
       </header>
 
-      <div class="controls">
-        <div class="search-row">
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="🔍 Buscar entre todas as ofertas..."
-          />
-        </div>
+      <!-- ── CARROSSEL DE BANNERS ─────────────────────── -->
+      <div class="carousel-wrap">
+        <div id="carousel"><!-- preenchido por Carousel.init() --></div>
+      </div>
+
+      <!-- ── BANNER FIXO ──────────────────────────────── -->
+      <a id="bannerFixo" href="#" class="banner-fixo">
+        <img id="bannerFixoImg" src="" alt="" />
+      </a>
+
+      <!-- ── QUICK LINKS ──────────────────────────────── -->
+      <div class="quick-links-wrap">
+        <div id="quickLinks"><!-- preenchido por QuickLinks.init() --></div>
+      </div>
+
+      <!-- ── BANNER SMARTPHONE ────────────────────────── -->
+      <a id="bannerSmartphone" href="#" class="banner-smartphone">
+        <img id="bannerSmartphoneImg" src="" alt="" />
+      </a>
+
+      <!-- ── SEÇÃO DE OFERTAS ─────────────────────────── -->
+      <div class="section-title">🔥 Confira o que temos para você</div>
+
+      <!-- Filtros de categoria -->
+      <div class="controls-inline">
         <div class="cat-filters" id="catFilters"></div>
         <div class="info-bar">
           <span class="status" id="status"></span>
@@ -42,6 +92,7 @@
         </div>
       </div>
 
+      <!-- Grid de produtos -->
       <div class="produtos-scroll" id="produtosScroll">
         <div id="output">
           <div class="empty-state">
@@ -51,32 +102,42 @@
         </div>
       </div>
 
+      <!-- Paginação -->
       <div class="pagination-bar" id="pagination"></div>
     </div>
 
-    <!-- DADOS -->
+    <!-- ════ SCRIPTS ════════════════════════════════════ -->
+
+    <!-- Recursos (imagens, links — edite aqui) -->
+    <script src="./js/resources.js"></script>
+
+    <!-- Dados -->
     <script src="./js/ofertas-ml.js"></script>
     <script src="./js/ofertas-shopee.js"></script>
     <script src="./js/ofertas-amazon.js"></script>
 
-    <!-- PLATAFORMAS -->
+    <!-- Plataformas -->
     <script src="./js/platforms/ml.js"></script>
     <script src="./js/platforms/shopee.js"></script>
     <script src="./js/platforms/amazon.js"></script>
     <script src="./js/platforms/platform.js"></script>
 
-    <!-- MÓDULOS -->
+    <!-- Módulos -->
     <script src="./modules/utils.js"></script>
     <script src="./modules/state.js"></script>
+    <script src="./modules/auth.js"></script>
     <script src="./modules/countdown.js"></script>
     <script src="./modules/filters.js"></script>
     <script src="./modules/products.js"></script>
 
-    <!-- COMPONENTES -->
+    <!-- Componentes -->
+    <script src="./components/hero.js"></script>
+    <script src="./components/carousel.js"></script>
+    <script src="./components/quicklinks.js"></script>
     <script src="./components/cards.js"></script>
     <script src="./components/pagination.js"></script>
 
-    <!-- ENTRADA -->
+    <!-- App (entrada) -->
     <script src="./js/app.js"></script>
   </body>
 </html>

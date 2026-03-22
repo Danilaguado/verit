@@ -1,0 +1,152 @@
+/* ═══════════════════════════════════════════════════
+   HOME: Hero, Carrossel, QuickLinks, Banners
+═══════════════════════════════════════════════════ */
+
+/* ── Hero overlay ── */
+#heroOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #1a1916;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s;
+  cursor: pointer;
+}
+
+/* ── Carrossel ── */
+.carousel-wrap {
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 0.75rem 1.5rem 0;
+  position: relative;
+}
+.carousel-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+.carousel-slide {
+  min-width: 100%;
+  display: block;
+}
+.carousel-slide img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+@media (min-width: 600px) {
+  .carousel-slide img {
+    height: 220px;
+  }
+}
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 0;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dot.active {
+  background: var(--text);
+}
+
+/* ── Banner fixo (abaixo dos quick links) ── */
+.banner-fixo {
+  display: block;
+  margin: 0.75rem 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.banner-fixo img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Quick Links ── */
+.quick-links-wrap {
+  padding: 0.75rem 1.5rem 0;
+}
+#quickLinks {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+#quickLinks::-webkit-scrollbar {
+  display: none;
+}
+.quick-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.quick-link:hover {
+  transform: translateY(-2px);
+}
+.quick-link.highlight {
+  border-color: #25d366;
+  box-shadow:
+    0 0 10px rgba(37, 211, 102, 0.4),
+    0 0 20px rgba(37, 211, 102, 0.2);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from {
+    box-shadow: 0 0 6px rgba(37, 211, 102, 0.4);
+  }
+  to {
+    box-shadow: 0 0 16px rgba(37, 211, 102, 0.7);
+  }
+}
+.quick-icon {
+  font-size: 22px;
+}
+.quick-label {
+  font-size: 10px;
+  font-family: "DM Mono", monospace;
+  color: var(--muted);
+}
+
+/* ── Banner smartphone ── */
+.banner-smartphone {
+  display: block;
+  margin: 0.75rem 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.banner-smartphone img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Seção "Confira o que temos" ── */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem 0.25rem;
+  color: var(--text);
+}

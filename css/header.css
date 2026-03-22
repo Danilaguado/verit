@@ -4,31 +4,80 @@
 header {
   display: flex;
   align-items: center;
+  gap: 10px;
   flex-shrink: 0;
-  background: var(--text);
-  color: var(--accent);
-  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  padding: 0.65rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
   font-family: "DM Mono", monospace;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  flex: 1;
 }
 .logo span {
+  color: var(--accent);
+}
+
+/* Barra de busca no header */
+.header-search {
+  flex: 2;
+  position: relative;
+}
+.header-search input {
+  width: 100%;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
+  outline: none;
+  backdrop-filter: blur(4px);
+}
+.header-search input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+.header-search input:focus {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Botão login */
+.btn-login {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.btn-login:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .extrator-btn {
-  margin-left: auto;
   font-family: "DM Mono", monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: #000;
   background: #ff9900;
-  padding: 6px 14px;
+  padding: 5px 10px;
   border-radius: 6px;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 .extrator-btn:hover {
   background: #e68900;
