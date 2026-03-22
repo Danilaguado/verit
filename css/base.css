@@ -1,0 +1,36 @@
+/* ═══════════════════════════════════════════════════
+   BASE: Variáveis e Reset
+═══════════════════════════════════════════════════ */
+:root {
+  --bg: #f5f3ee;
+  --surface: #fff;
+  --border: #e0ddd6;
+  --text: #1a1916;
+  --muted: #7a776f;
+  --accent: #ffe000;
+  --green: #1a7a3a;
+  --green-bg: #e6f4eb;
+  --red: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Layout fixo 100vh */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
