@@ -9,8 +9,19 @@ export default async function handler(request, response) {
   const CLIENT_SECRET = process.env.CLIENT_SECRET;
   const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
+  // 1. Diagnóstico: Verificamos si Vercel sí está cargando las variables
+  if (!APP_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
+    return response.status(500).json({
+      error: "Vercel no está leyendo las variables de entorno",
+      variables_leidas: {
+        APP_ID_existe: !!APP_ID,
+        CLIENT_SECRET_existe: !!CLIENT_SECRET,
+        REFRESH_TOKEN_existe: !!REFRESH_TOKEN,
+      },
+    });
+  }
+
   try {
-    // 1. Vercel pide un token de acceso fresco usando tu Refresh Token
     const tokenParams = new URLSearchParams({
       grant_type: "refresh_token",
       client_id: APP_ID,
@@ -29,13 +40,14 @@ export default async function handler(request, response) {
 
     const tokenData = await tokenReq.json();
 
+    // 2. Diagnóstico: Mostramos el error EXACTO que devuelve Mercado Libre
     if (!tokenData.access_token) {
-      throw new Error(
-        "No se pudo renovar el token. Revisa tus credenciales en Vercel.",
-      );
+      return response.status(400).json({
+        error: "Mercado Libre rechazó la petición",
+        respuesta_oficial_ml: tokenData,
+      });
     }
 
-    // 2. Vercel busca los productos con el token recién horneado
     const mlUrl = `https://api.mercadolibre.com/sites/MLB/search?category=${categoria}&limit=20&sort=relevance`;
     const mlReq = await fetch(mlUrl, {
       method: "GET",
@@ -47,7 +59,6 @@ export default async function handler(request, response) {
 
     const mlData = await mlReq.json();
 
-    // 3. Vercel te devuelve las ofertas a tu página
     return response.status(200).json(mlData);
   } catch (error) {
     return response.status(500).json({ error: error.message });
