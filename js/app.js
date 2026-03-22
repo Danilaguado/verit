@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function () {
   // ── Placeholder animado no buscador ──
-  SearchPlaceholder.init();
+  if (typeof SearchPlaceholder !== "undefined") SearchPlaceholder.init();
 
   // ── Banners ──
   const bf = document.getElementById("bannerFixo");
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     bfImg.src = Resources.bannerFixo.src;
     bfImg.alt = Resources.bannerFixo.alt || "";
     bf.href = Resources.bannerFixo.link || "#";
-  } else {
+  } else if (bf) {
     bf.style.display = "none";
   }
 
@@ -22,12 +22,14 @@ document.addEventListener("DOMContentLoaded", function () {
     bsImg.src = Resources.bannerSmartphone.src;
     bsImg.alt = Resources.bannerSmartphone.alt || "";
     bs.href = Resources.bannerSmartphone.link || "#";
-  } else {
+  } else if (bs) {
     bs.style.display = "none";
   }
 
-  // ── Carrossel e produtos ──
-  Carousel.init();
+  // ── Carrossel ──
+  if (typeof Carousel !== "undefined") Carousel.init();
+
+  // ── Produtos ──
   Products.load();
 
   // ── PWA instalação ──
@@ -39,7 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!deferredPrompt) return;
       const bar = document.createElement("div");
       bar.id = "installBar";
-      bar.innerHTML = `<span>📲 Instale o Flash Ofertas!</span>
+      bar.innerHTML = `
+        <span>📲 Instale o Flash Ofertas!</span>
         <button onclick="installApp()">Instalar</button>
         <button onclick="this.parentElement.remove()"
           style="background:transparent;color:#fff;border:none;cursor:pointer;font-size:18px;padding:0 4px;">✕</button>`;
