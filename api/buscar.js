@@ -36,7 +36,7 @@ export default async function handler(request, response) {
   };
 
   try {
-    // 1. Pega os IDs dos produtos em destaque da categoria
+    // Pega IDs do highlights
     const highlightRes = await fetch(
       `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
       { headers },
@@ -45,20 +45,43 @@ export default async function handler(request, response) {
     const ids = (highlightData.content || []).slice(0, 20).map((i) => i.id);
 
     if (!ids.length) {
-      return response.status(200).json({ results: [] });
+      return response
+        .status(200)
+        .json({ error: "Highlights sem IDs", raw: highlightData });
     }
 
-    // 2. Busca detalhes de todos os IDs de uma vez (endpoint multiget)
-    const itemsRes = await fetch(
-      `https://api.mercadolibre.com/items?ids=${ids.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink,condition`,
-      { headers },
-    );
-    const itemsData = await itemsRes.json();
+    // Testa 3 formas de buscar os detalhes
+    const url1 = `https://api.mercadolibre.com/items?ids=${ids.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink`;
+    const url2 = `https://api.mercadolibre.com/items/${ids[0]}`;
+    const url3 = `https://api.mercadolibre.com/items/${ids[0]}?access_token=${ACCESS_TOKEN}`;
 
-    // itemsData é um array de { code, body } — extrai só os que vieram OK
-    const results = itemsData.filter((i) => i.code === 200).map((i) => i.body);
+    const [r1, r2, r3] = await Promise.all([
+      fetch(url1, { headers }).then(async (r) => ({
+        status: r.status,
+        body: await r.text(),
+      })),
+      fetch(url2, { headers }).then(async (r) => ({
+        status: r.status,
+        body: await r.text(),
+      })),
+      fetch(url3).then(async (r) => ({
+        status: r.status,
+        body: await r.text(),
+      })),
+    ]);
 
-    return response.status(200).json({ results });
+    return response.status(200).json({
+      ids_encontrados: ids,
+      multiget: { status: r1.status, sample: r1.body.substring(0, 300) },
+      item_unico_header: {
+        status: r2.status,
+        sample: r2.body.substring(0, 300),
+      },
+      item_unico_queryparam: {
+        status: r3.status,
+        sample: r3.body.substring(0, 300),
+      },
+    });
   } catch (error) {
     return response.status(500).json({ error: error.message });
   }
