@@ -1,3 +1,5 @@
+const API_URL = "https://verit-orpin.vercel.app/api/buscar";
+
 const CATS = [
   { id: "MLB5672", name: "Acessórios para Veículos" },
   { id: "MLB1403", name: "Agro" },
@@ -25,7 +27,6 @@ const CATS = [
 
 let allProducts = [];
 
-// Formatear moneda
 const fmt = (n) =>
   "R$ " +
   n.toLocaleString("pt-BR", {
@@ -33,14 +34,12 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
-// Actualizar estado en pantalla
 function setStatus(msg, type) {
   const el = document.getElementById("status");
   el.textContent = msg;
   el.className = "status" + (type ? " " + type : "");
 }
 
-// Cargar opciones en el select
 function loadCategories() {
   const sel = document.getElementById("categorySelect");
   CATS.forEach((c) => {
@@ -51,7 +50,6 @@ function loadCategories() {
   });
 }
 
-// Renderizar las tarjetas de productos
 function renderProducts() {
   const only = document.getElementById("onlyDiscount").checked;
   const list = only
@@ -108,7 +106,6 @@ function renderProducts() {
     "</div>";
 }
 
-// Lógica principal de búsqueda
 async function buscarProdutos() {
   const catId = document.getElementById("categorySelect").value;
   if (!catId) {
@@ -121,16 +118,14 @@ async function buscarProdutos() {
   document.getElementById("output").innerHTML =
     '<div class="empty-state">Carregando...</div>';
   document.getElementById("countBadge").textContent = "";
+  setStatus("Buscando produtos...", "loading");
 
   try {
-    setStatus("Buscando produtos...", "loading");
-
-    // Llamada segura a nuestro backend en Vercel
-    const res = await fetch(`/api/buscar?categoria=${catId}`);
+    const res = await fetch(`${API_URL}?categoria=${catId}`);
     const data = await res.json();
 
-    if (data.error || res.status !== 200) {
-      setStatus("Erro: " + (data.error || "Erro no servidor"), "error");
+    if (data.error) {
+      setStatus("Erro: " + data.error, "error");
       btn.disabled = false;
       return;
     }
@@ -146,7 +141,7 @@ async function buscarProdutos() {
       renderProducts();
     }
   } catch (e) {
-    setStatus("Erro de conexão: " + e.message, "error");
+    setStatus("Erro: " + e.message, "error");
     document.getElementById("output").innerHTML =
       '<div class="empty-state"><div class="icon">⚠️</div>' +
       e.message +
@@ -156,7 +151,6 @@ async function buscarProdutos() {
   btn.disabled = false;
 }
 
-// Event Listeners iniciales
 document.addEventListener("DOMContentLoaded", () => {
   loadCategories();
   document
