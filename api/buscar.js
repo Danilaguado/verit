@@ -22,111 +22,62 @@ export default async function handler(request, response) {
   }
 
   const ACCESS_TOKEN = process.env.ML_ACCESS_TOKEN;
-  const headers = { Accept: "application/json" };
-  if (ACCESS_TOKEN) headers["Authorization"] = `Bearer ${ACCESS_TOKEN}`;
+  const authHeaders = {
+    Accept: "application/json",
+    Authorization: `Bearer ${ACCESS_TOKEN}`,
+  };
+  const pubHeaders = { Accept: "application/json" }; // sem token
 
   const targetCat = categoria || "MLB1144";
 
-  try {
-    // Tenta search direto server-side (sem CORS, pode funcionar sem auth)
-    const searchUrl = tipo
-      ? buildOfertaUrl(tipo)
-      : `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=20&sort=relevance`;
-
-    const res = await fetch(searchUrl, { headers });
-    const data = await res.json();
-
-    // Se search funcionou, retorna direto
-    if (res.ok && data.results && data.results.length > 0) {
-      return response.status(200).json({
-        results: data.results.map((p) => ({
-          id: p.id,
-          title: p.title,
-          price: p.price,
-          original_price: p.original_price,
-          thumbnail: p.thumbnail,
-          permalink: p.permalink,
-        })),
-      });
-    }
-
-    // Fallback: highlights por categoria
-    const results = await getHighlights(targetCat, headers);
-    return response.status(200).json({ results });
-  } catch (error) {
-    return response.status(500).json({ error: error.message });
-  }
-}
-
-function buildOfertaUrl(tipo) {
-  const base =
-    "https://api.mercadolibre.com/sites/MLB/search?limit=20&sort=relevance";
-  if (tipo === "relampago") return base + "&promotion_type=lightning";
-  if (tipo === "imbativeis") return base + "&promotion_type=deal_of_the_day";
-  return base + "&discount=10-100"; // todas as ofertas
-}
-
-async function getHighlights(catId, headers) {
-  const ids = new Set();
-
-  const res = await fetch(
-    `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
-    { headers },
-  );
-  if (res.ok) {
-    const data = await res.json();
-    (data.content || []).forEach((i) => ids.add(i.id));
-  }
-
-  if (ids.size < 20) {
-    const catRes = await fetch(
-      `https://api.mercadolibre.com/categories/${catId}`,
-      { headers },
-    );
-    if (catRes.ok) {
-      const catData = await catRes.json();
-      for (const child of catData.children_categories || []) {
-        if (ids.size >= 20) break;
-        const subRes = await fetch(
-          `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
-          { headers },
-        );
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          (subData.content || []).forEach((i) => ids.add(i.id));
-        }
-      }
-    }
-  }
-
-  const productIds = [...ids].slice(0, 20);
-  if (!productIds.length) return [];
+  // Testa 4 URLs e retorna diagnóstico completo
+  const tests = [
+    {
+      label: "search COM token",
+      url: `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=5`,
+      headers: authHeaders,
+    },
+    {
+      label: "search SEM token",
+      url: `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=5`,
+      headers: pubHeaders,
+    },
+    {
+      label: "search ofertas COM token",
+      url: `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&discount=10-100&limit=5`,
+      headers: authHeaders,
+    },
+    {
+      label: "search relampago COM token",
+      url: `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&promotion_type=lightning&limit=5`,
+      headers: authHeaders,
+    },
+  ];
 
   const results = await Promise.all(
-    productIds.map(async (pid) => {
+    tests.map(async (t) => {
       try {
-        const [prodRes, itemsRes] = await Promise.all([
-          fetch(`https://api.mercadolibre.com/products/${pid}`, {
-            headers,
-          }).then((r) => r.json()),
-          fetch(`https://api.mercadolibre.com/products/${pid}/items?limit=1`, {
-            headers,
-          }).then((r) => r.json()),
-        ]);
-        const item = itemsRes?.results?.[0] ?? null;
+        const res = await fetch(t.url, { headers: t.headers });
+        const text = await res.text();
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = null;
+        }
         return {
-          id: pid,
-          title: prodRes.name || prodRes.title || "",
-          price: item?.price ?? null,
-          original_price: item?.original_price ?? null,
-          thumbnail: prodRes.pictures?.[0]?.url ?? null,
-          permalink: `https://www.mercadolivre.com.br/p/${pid}`,
+          label: t.label,
+          status: res.status,
+          total: parsed?.paging?.total ?? null,
+          results_count: parsed?.results?.length ?? null,
+          error: parsed?.error || parsed?.message || null,
+          sample: text.substring(0, 200),
         };
-      } catch {
-        return null;
+      } catch (e) {
+        return { label: t.label, error: e.message };
       }
     }),
   );
 
-  return results.filter((p) => p && p.title && p.price !== null);
+  return response.status(200).json({ diagnostico: results });
 }
