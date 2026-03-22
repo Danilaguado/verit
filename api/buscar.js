@@ -1,5 +1,5 @@
 export default async function handler(request, response) {
-  const { categoria, code } = request.query;
+  const { categoria, tipo, code } = request.query;
 
   const APP_ID = process.env.APP_ID || "3303067719048967";
   const CLIENT_SECRET =
@@ -28,62 +28,82 @@ export default async function handler(request, response) {
       .json({ error: "ML_ACCESS_TOKEN não configurado." });
   }
 
-  const targetCat = categoria || "MLB1144";
   const headers = {
     Authorization: `Bearer ${ACCESS_TOKEN}`,
     Accept: "application/json",
   };
 
   try {
-    // Coleta IDs de highlights da categoria principal + todas as subcategorias
-    // até ter 20 produtos
-    async function getHighlightIds(catId, limit = 20) {
-      const ids = new Set();
+    let productIds = [];
 
-      // Tenta highlights da categoria principal
-      const res = await fetch(
-        `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
-        { headers },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        (data.content || []).forEach((i) => ids.add(i.id));
-      }
+    // ── MODO OFERTAS ESPECIAIS (todas / relâmpago / preços imbatíveis) ──
+    if (tipo) {
+      const highlightTypes = {
+        todas: "https://api.mercadolibre.com/highlights/MLB",
+        relampago: "https://api.mercadolibre.com/highlights/MLB?type=LIGHTNING",
+        imbativeis:
+          "https://api.mercadolibre.com/highlights/MLB?type=BEST_PRICE",
+      };
+      const url = highlightTypes[tipo] || highlightTypes["todas"];
+      const res = await fetch(url, { headers });
+      const data = await res.json();
+      productIds = (data.content || []).slice(0, 20).map((i) => i.id);
 
-      // Se ainda não tem 20, busca subcategorias
-      if (ids.size < limit) {
-        const catRes = await fetch(
-          `https://api.mercadolibre.com/categories/${catId}`,
+      // Se não tiver conteúdo na raiz, tenta o highlights geral
+      if (!productIds.length) {
+        const fallback = await fetch(
+          "https://api.mercadolibre.com/highlights/MLB",
           { headers },
         );
-        if (catRes.ok) {
-          const catData = await catRes.json();
-          const children = catData.children_categories || [];
+        const fbData = await fallback.json();
+        productIds = (fbData.content || []).slice(0, 20).map((i) => i.id);
+      }
 
-          for (const child of children) {
-            if (ids.size >= limit) break;
-            const subRes = await fetch(
-              `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
-              { headers },
-            );
-            if (subRes.ok) {
-              const subData = await subRes.json();
-              (subData.content || []).forEach((i) => ids.add(i.id));
+      // ── MODO CATEGORIA ──
+    } else {
+      const targetCat = categoria || "MLB1144";
+
+      async function getHighlightIds(catId, limit = 20) {
+        const ids = new Set();
+        const res = await fetch(
+          `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
+          { headers },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          (data.content || []).forEach((i) => ids.add(i.id));
+        }
+        if (ids.size < limit) {
+          const catRes = await fetch(
+            `https://api.mercadolibre.com/categories/${catId}`,
+            { headers },
+          );
+          if (catRes.ok) {
+            const catData = await catRes.json();
+            for (const child of catData.children_categories || []) {
+              if (ids.size >= limit) break;
+              const subRes = await fetch(
+                `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
+                { headers },
+              );
+              if (subRes.ok) {
+                const subData = await subRes.json();
+                (subData.content || []).forEach((i) => ids.add(i.id));
+              }
             }
           }
         }
+        return [...ids].slice(0, limit);
       }
 
-      return [...ids].slice(0, limit);
+      productIds = await getHighlightIds(targetCat, 20);
     }
-
-    const productIds = await getHighlightIds(targetCat, 20);
 
     if (!productIds.length) {
       return response.status(200).json({ results: [] });
     }
 
-    // Busca detalhes + preço de cada produto em paralelo
+    // Busca detalhes + preço de cada produto
     const results = await Promise.all(
       productIds.map(async (pid) => {
         try {
@@ -96,7 +116,6 @@ export default async function handler(request, response) {
               { headers },
             ).then((r) => r.json()),
           ]);
-
           const item = itemsRes?.results?.[0] ?? null;
           return {
             id: pid,

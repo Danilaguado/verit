@@ -1,8 +1,5 @@
 const API_URL = "https://verit-orpin.vercel.app/api/buscar";
-
-// ─── CÓDIGO DE AFILIADO ───────────────────────────────────
 const AFILIADO = "matt_word=ed20240607152234&matt_tool=53313647";
-// ──────────────────────────────────────────────────────────
 
 const CATS = [
   { id: "MLB5672", name: "Acessórios para Veículos" },
@@ -35,6 +32,7 @@ const CATS = [
 ];
 
 let allProducts = [];
+let modoAtivo = "categoria"; // "categoria" | "todas" | "relampago" | "imbativeis"
 
 const fmt = (n) =>
   "R$ " +
@@ -43,17 +41,31 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
-// Adiciona código de afiliado em qualquer URL do ML
 function linkAfiliado(url) {
   if (!url) return "#";
-  const sep = url.includes("?") ? "&" : "?";
-  return url + sep + AFILIADO;
+  return url + (url.includes("?") ? "&" : "?") + AFILIADO;
 }
 
 function setStatus(msg, type) {
   const el = document.getElementById("status");
   el.textContent = msg;
   el.className = "status" + (type ? " " + type : "");
+}
+
+function setTab(tab) {
+  modoAtivo = tab;
+  document
+    .querySelectorAll(".tab-btn")
+    .forEach((b) => b.classList.remove("active"));
+  document.querySelector('[data-tab="' + tab + '"]').classList.add("active");
+
+  const catRow = document.getElementById("catRow");
+  if (tab === "categoria") {
+    catRow.style.display = "";
+  } else {
+    catRow.style.display = "none";
+    buscarProdutos();
+  }
 }
 
 function loadCategories() {
@@ -103,8 +115,7 @@ function renderProducts() {
           '" target="_blank" rel="noopener">' +
           '<img class="card-img" src="' +
           thumb +
-          '" alt="" loading="lazy"/>' +
-          "</a>" +
+          '" alt="" loading="lazy"/></a>' +
           '<div class="card-body"><div class="card-title">' +
           p.title +
           "</div>" +
@@ -128,27 +139,35 @@ function renderProducts() {
 }
 
 async function buscarProdutos() {
-  const catId = document.getElementById("categorySelect").value;
-  if (!catId) {
-    setStatus("Selecione uma categoria.", "error");
-    return;
-  }
-
   const btn = document.getElementById("btnBuscar");
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   document.getElementById("output").innerHTML =
     '<div class="empty-state">Carregando...</div>';
   document.getElementById("countBadge").textContent = "";
   setStatus("Buscando produtos...", "loading");
 
+  let fetchUrl = API_URL;
+
+  if (modoAtivo === "categoria") {
+    const catId = document.getElementById("categorySelect").value;
+    if (!catId) {
+      setStatus("Selecione uma categoria.", "error");
+      if (btn) btn.disabled = false;
+      return;
+    }
+    fetchUrl += "?categoria=" + catId;
+  } else {
+    fetchUrl += "?tipo=" + modoAtivo;
+  }
+
   try {
-    const res = await fetch(`${API_URL}?categoria=${catId}`);
+    const res = await fetch(fetchUrl);
     if (!res.ok) throw new Error("Erro HTTP " + res.status);
     const data = await res.json();
 
     if (data.error) {
       setStatus("Erro: " + data.error, "error");
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
       return;
     }
 
@@ -157,7 +176,7 @@ async function buscarProdutos() {
     if (!allProducts.length) {
       setStatus("Nenhum produto encontrado.", "error");
       document.getElementById("output").innerHTML =
-        '<div class="empty-state"><div class="icon">📭</div>Nenhum produto nessa categoria.</div>';
+        '<div class="empty-state"><div class="icon">📭</div>Nenhum produto encontrado.</div>';
     } else {
       setStatus(allProducts.length + " produtos carregados.");
       renderProducts();
@@ -170,7 +189,7 @@ async function buscarProdutos() {
       "</div>";
   }
 
-  btn.disabled = false;
+  if (btn) btn.disabled = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -181,4 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("onlyDiscount")
     .addEventListener("change", renderProducts);
+  document.querySelectorAll(".tab-btn").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.dataset.tab));
+  });
 });
