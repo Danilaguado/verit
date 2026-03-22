@@ -252,13 +252,18 @@ header {
   color: #000;
 }
 
-/* ── PAGINAÇÃO DENTRO DO SCROLL ── */
+/* ── PAGINAÇÃO STICKY NO FUNDO ── */
 .pagination-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
   display: flex;
   gap: 6px;
   justify-content: center;
   flex-wrap: wrap;
-  padding: 1.5rem 0 2rem;
+  padding: 0.75rem 1rem;
+  z-index: 5;
 }
 .page-btn {
   font-family: "DM Mono", monospace;
