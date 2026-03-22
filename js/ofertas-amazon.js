@@ -1,6 +1,4 @@
-// Amazon Ofertas — atualizado em 22/03/2026
-// Para atualizar: use o extrator em tools/extrator-amazon.html
-var OFERTAS_AMAZON = [
+[
   {
     id: "6555870192",
     title: "O cavaleiro preso na armadura",
@@ -17,7 +15,7 @@ var OFERTAS_AMAZON = [
     id: "B0CTN4ZMZY",
     title: "Cera Modeladora Hair Wax Stick",
     price: 24.78,
-    original_price: 36.0,
+    original_price: 36,
     discount: "31%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/415YqeC86cL._SL500_.jpg",
@@ -67,7 +65,7 @@ var OFERTAS_AMAZON = [
     title:
       "Electrolux Cooktop 5 Bocas a Gás Electrolux Inox Experience Multi Chama e Grade Ferro Fundido (KE5XC) Bivolt",
     price: 1070.17,
-    original_price: 1399.0,
+    original_price: 1399,
     discount: "23%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/41gBXXqQ-lL._SL500_.jpg",
@@ -91,7 +89,7 @@ var OFERTAS_AMAZON = [
     id: "B08W9PG9VQ",
     title: "ADCOS Peeling de Hortelã Iluminador - Esfoliante 100g",
     price: 117.7,
-    original_price: 148.0,
+    original_price: 148,
     discount: "20%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/21RfUSytMQL._SL500_.jpg",
@@ -139,7 +137,7 @@ var OFERTAS_AMAZON = [
   {
     id: "B0DSCGG8V9",
     title: "Blender Ultra Power 1000 Oster com 2 Copos - 127V",
-    price: 387.0,
+    price: 387,
     original_price: 499.9,
     discount: "22%",
     expires_at: null,
@@ -153,7 +151,7 @@ var OFERTAS_AMAZON = [
     title:
       'Smartwatch Aurafit Relógio inteligente para Homens, Tela Full Touch 1.43"AMOLED, IP68, Compatível com iOS e Android, 110+ Modos Esportivos, Assistente de Voz, Faz e Recebe Ligações',
     price: 199.5,
-    original_price: 290.0,
+    original_price: 290,
     discount: "31%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/41oD1gEPHtL._SL500_.jpg",
@@ -177,7 +175,7 @@ var OFERTAS_AMAZON = [
   {
     id: "B0F6DB3Y8P",
     title: "Nintendo, Jogo, Mario Kart World Digital, Nintendo Switch 2",
-    price: 399.0,
+    price: 399,
     original_price: 499.9,
     discount: "20%",
     expires_at: null,
@@ -189,8 +187,8 @@ var OFERTAS_AMAZON = [
   {
     id: "B07NDL6B12",
     title: "Pasta Lenna's Carteiro",
-    price: 129.0,
-    original_price: 169.0,
+    price: 129,
+    original_price: 169,
     discount: "23%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/41SlKvRBcNL._SL500_.jpg",
@@ -215,7 +213,7 @@ var OFERTAS_AMAZON = [
     title:
       "Air Cooler GamerStorm X Redragon AK400 RD Preto 4 Heatpipes Fan 120 mm R-AK400-BKNNMD-AJG",
     price: 173.9,
-    original_price: 199.0,
+    original_price: 199,
     discount: "12%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/41fMGLCl4DL._SL500_.jpg",
@@ -327,8 +325,8 @@ var OFERTAS_AMAZON = [
     id: "8520458947",
     title:
       "Manual de Antimicrobianos: Departamento de Infectologia e Medicina Tropical da Faculdade de Medicina da USP",
-    price: 165.0,
-    original_price: 242.0,
+    price: 165,
+    original_price: 242,
     discount: "31%",
     expires_at: null,
     thumbnail: "https://m.media-amazon.com/images/I/41fo4GTSZAL._SL500_.jpg",
@@ -339,7 +337,7 @@ var OFERTAS_AMAZON = [
   {
     id: "B0DYF9X6KX",
     title: "Máquina de lavar 12Kg Philco 16 Modos de operação PLR12A 220V",
-    price: 2139.0,
+    price: 2139,
     original_price: null,
     discount: null,
     expires_at: null,

@@ -21,6 +21,10 @@
         color: #aaa;
         font-size: 13px;
         margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+      b {
+        color: #ff9900;
       }
       textarea {
         width: 100%;
@@ -47,6 +51,21 @@
       .btn:hover {
         background: #e68900;
       }
+      .btn-sec {
+        background: #232f3e;
+        color: #ff9900;
+        border: 1px solid #ff9900;
+        padding: 10px 20px;
+        font-size: 13px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 12px;
+        margin-left: 8px;
+      }
+      .btn-sec:hover {
+        background: #ff9900;
+        color: #000;
+      }
       .result {
         margin-top: 1.5rem;
         background: #111;
@@ -64,33 +83,33 @@
         font-size: 12px;
         color: #0f0;
         white-space: pre-wrap;
-        max-height: 200px;
+        max-height: 250px;
         overflow-y: auto;
       }
-      .download-btn {
-        background: #232f3e;
-        color: #ff9900;
-        border: 1px solid #ff9900;
-        padding: 8px 20px;
-        font-size: 13px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 10px;
+      .stats {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
       }
-      .download-btn:hover {
-        background: #ff9900;
-        color: #000;
+      .stat {
+        background: #232f3e;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #ff9900;
       }
     </style>
   </head>
   <body>
     <h1>🛒 Extrator de Ofertas Amazon</h1>
     <p>
-      1. Na aba Network do DevTools, clica em qualquer requisição
-      <b>promotions?pageSize=30</b><br />
-      2. Vai em <b>Resposta</b> → seleciona tudo → copia<br />
-      3. Cola aqui e clica em Extrair<br />
-      4. Repete para cada página e clica em Baixar JS quando terminar
+      1. Abre o DevTools (F12) na página de ofertas da Amazon<br />
+      2. Aba <b>Network</b> → filtra por <b>promotio</b><br />
+      3. Clica em qualquer requisição <b>promotions?pageSize=30</b><br />
+      4. Aba <b>Resposta</b> → botão direito → <b>Copiar resposta</b><br />
+      5. Cola aqui e clica em <b>Extrair</b><br />
+      6. Repete para cada página e clica em <b>Baixar JS</b>
     </p>
 
     <textarea
@@ -99,32 +118,19 @@
     ></textarea>
     <br />
     <button class="btn" onclick="extrair()">⚡ Extrair Produtos</button>
-    <button
-      class="btn"
-      style="
-        background: #232f3e;
-        color: #ff9900;
-        border: 1px solid #ff9900;
-        margin-left: 8px;
-      "
-      onclick="limpar()"
-    >
-      🗑 Limpar
-    </button>
+    <button class="btn-sec" onclick="limpar()">🗑 Limpar tudo</button>
 
     <div class="result" id="result">
       <h2>📦 Resultado</h2>
+      <div class="stats">
+        <div class="stat" id="statTotal">Total: 0</div>
+        <div class="stat" id="statComDesc">Com desconto: 0</div>
+        <div class="stat" id="statComExp">Com expiração: 0</div>
+      </div>
       <div class="log" id="log"></div>
-      <button class="download-btn" onclick="baixar()">
-        ⬇ Baixar ofertas-amazon.js
-      </button>
-      <button
-        class="download-btn"
-        style="margin-left: 8px"
-        onclick="copiarJSON()"
-      >
-        📋 Copiar JSON
-      </button>
+      <br />
+      <button class="btn" onclick="baixar()">⬇ Baixar ofertas-amazon.js</button>
+      <button class="btn-sec" onclick="copiarJSON()">📋 Copiar JSON</button>
     </div>
 
     <script>
@@ -136,18 +142,26 @@
         el.scrollTop = el.scrollHeight;
       }
 
+      function updateStats() {
+        document.getElementById("statTotal").textContent =
+          "Total: " + todos.length;
+        document.getElementById("statComDesc").textContent =
+          "Com desconto: " + todos.filter((p) => p.discount).length;
+        document.getElementById("statComExp").textContent =
+          "Com expiração: " + todos.filter((p) => p.expires_at).length;
+      }
+
       function extrair() {
         var input = document.getElementById("jsonInput").value.trim();
         if (!input) {
           alert("Cole o JSON primeiro!");
           return;
         }
-
         try {
           var d = JSON.parse(input);
           var promos = d?.entity?.rankedPromotions || [];
           if (!promos.length) {
-            log("❌ Nenhuma promoção encontrada neste JSON.");
+            log("❌ Nenhuma promoção encontrada.");
             return;
           }
 
@@ -175,7 +189,12 @@
             var thumbnail = pid
               ? "https://m.media-amazon.com/images/I/" + pid + "._SL500_.jpg"
               : null;
-            var expires = p.deal?.endTime ?? null;
+            // Expiração via dealDetails
+            var dealDetails =
+              prod.buyingOptions?.[0]?.dealDetails?.entity ?? {};
+            var expires_at = dealDetails.endTime ?? null;
+            var starts_at = dealDetails.startTime ?? null;
+
             if (!title || !price) return;
             if (
               todos.find(function (x) {
@@ -189,7 +208,8 @@
               price: price,
               original_price: original > price ? original : null,
               discount: discount,
-              expires_at: expires,
+              expires_at: expires_at,
+              starts_at: starts_at,
               thumbnail: thumbnail,
               permalink: permalink,
               platform: "amazon",
@@ -198,15 +218,11 @@
           });
 
           document.getElementById("result").style.display = "block";
-          log(
-            "✅ +" +
-              novos +
-              " novos produtos | Total acumulado: " +
-              todos.length,
-          );
+          updateStats();
+          log("✅ +" + novos + " novos | Total: " + todos.length + " produtos");
           document.getElementById("jsonInput").value = "";
         } catch (e) {
-          log("❌ Erro ao processar JSON: " + e.message);
+          log("❌ Erro: " + e.message);
         }
       }
 
@@ -229,16 +245,12 @@
         a.href = URL.createObjectURL(blob);
         a.download = "ofertas-amazon.js";
         a.click();
-        log(
-          "📥 Arquivo baixado: ofertas-amazon.js (" +
-            todos.length +
-            " produtos)",
-        );
+        log("📥 Baixado: ofertas-amazon.js (" + todos.length + " produtos)");
       }
 
       function copiarJSON() {
         navigator.clipboard.writeText(JSON.stringify(todos, null, 2));
-        log("📋 JSON copiado para o clipboard!");
+        log("📋 JSON copiado!");
       }
     </script>
   </body>
