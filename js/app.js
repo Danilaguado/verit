@@ -1,6 +1,9 @@
 const API_URL = "https://verit-orpin.vercel.app/api/buscar";
 
-// Categorias oficiais do Mercado Livre Brasil — fonte: api.mercadolibre.com/sites/MLB/categories
+// ─── CÓDIGO DE AFILIADO ───────────────────────────────────
+const AFILIADO = "matt_word=ed20240607152234&matt_tool=53313647";
+// ──────────────────────────────────────────────────────────
+
 const CATS = [
   { id: "MLB5672", name: "Acessórios para Veículos" },
   { id: "MLB271599", name: "Agro" },
@@ -39,6 +42,13 @@ const fmt = (n) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+// Adiciona código de afiliado em qualquer URL do ML
+function linkAfiliado(url) {
+  if (!url) return "#";
+  const sep = url.includes("?") ? "&" : "?";
+  return url + sep + AFILIADO;
+}
 
 function setStatus(msg, type) {
   const el = document.getElementById("status");
@@ -85,11 +95,16 @@ function renderProducts() {
           : "";
         var disc = p.original_price && p.original_price > p.price;
         var pct = disc ? Math.round((1 - p.price / p.original_price) * 100) : 0;
+        var url = linkAfiliado(p.permalink);
         return (
           '<div class="card">' +
+          '<a href="' +
+          url +
+          '" target="_blank" rel="noopener">' +
           '<img class="card-img" src="' +
           thumb +
           '" alt="" loading="lazy"/>' +
+          "</a>" +
           '<div class="card-body"><div class="card-title">' +
           p.title +
           "</div>" +
@@ -103,8 +118,8 @@ function renderProducts() {
           (disc ? '<span class="badge">-' + pct + "% OFF</span>" : "") +
           "</div></div>" +
           '<a class="card-link" href="' +
-          p.permalink +
-          '" target="_blank">ver no mercado livre →</a>' +
+          url +
+          '" target="_blank" rel="noopener">ver no mercado livre →</a>' +
           "</div>"
         );
       })
