@@ -171,7 +171,8 @@ function goPage(n) {
 function renderPagination(pages) {
   const el = document.getElementById("pagination");
   if (pages <= 1) {
-    el.innerHTML = "";
+    el.innerHTML =
+      "<span style=\"font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);\">Página 1 de 1</span>";
     return;
   }
 
