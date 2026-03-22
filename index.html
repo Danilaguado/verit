@@ -29,8 +29,6 @@
     <link rel="stylesheet" href="./css/loader.css" />
   </head>
   <body>
-    <!-- Hero overlay -->
-    <!-- Loader de transição -->
     <div id="loader" class="loader" style="display: none">
       <div class="loader-dots"><span></span><span></span><span></span></div>
     </div>
@@ -38,20 +36,17 @@
     <div class="app">
       <!-- HEADER -->
       <header>
-        <!-- Logo do site (substitua em assets/logo.png) -->
         <a href="#" class="site-logo">
           <img
             src="./assets/logo.png"
             alt="Flash Ofertas"
-            id="siteLogo"
             onerror="
               this.style.display = 'none';
-              this.nextElementSibling.style.display = 'block';
+              this.nextElementSibling.style.display = 'flex';
             "
           />
           <span class="site-logo-fallback" style="display: none">⚡</span>
         </a>
-
         <div class="header-search">
           <input
             type="text"
@@ -72,10 +67,7 @@
             </svg>
           </button>
         </div>
-
-        <button class="btn-login" onclick="Auth.openLogin()" title="Entrar">
-          👤 Entrar
-        </button>
+        <button class="btn-login" onclick="Auth.openLogin()">👤 Entrar</button>
         <a
           href="./tools/extrator-amazon.html"
           target="_blank"
@@ -84,24 +76,17 @@
         >
       </header>
 
-      <!-- TELA HOME (banners + filtros) -->
+      <!-- TELA HOME -->
       <div id="homeScreen">
-        <!-- Carrossel de banners -->
         <div class="carousel-wrap">
           <div id="carousel"></div>
         </div>
-
-        <!-- Banner fixo -->
         <a id="bannerFixo" href="#" class="banner-fixo">
           <img id="bannerFixoImg" src="" alt="" />
         </a>
-
-        <!-- Banner smartphone -->
         <a id="bannerSmartphone" href="#" class="banner-smartphone">
           <img id="bannerSmartphoneImg" src="" alt="" />
         </a>
-
-        <!-- Filtro de plataforma -->
         <div class="platform-filter-wrap">
           <button
             class="platform-btn active"
@@ -132,18 +117,13 @@
             Amazon
           </button>
         </div>
-
-        <!-- Carrusel de categorias -->
         <div class="cat-carousel-wrap">
           <div class="cat-filters" id="catFilters"></div>
         </div>
-
-        <!-- Título seção -->
         <div class="section-title">🔥 Confira o que temos para você</div>
       </div>
-      <!-- /homeScreen -->
 
-      <!-- TELA DE RESULTADOS (aparece após busca) -->
+      <!-- TELA RESULTADOS -->
       <div id="resultsScreen" style="display: none">
         <div class="results-header">
           <button class="back-btn" onclick="Search.clear()">
@@ -173,22 +153,27 @@
         </div>
       </div>
 
-      <!-- Contagem + paginação -->
       <div class="count-bar" id="countBar" style="display: none">
         <span class="count" id="countBadge"></span>
       </div>
       <div class="pagination-bar" id="pagination"></div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- ════ SCRIPTS (ordem importa!) ════════════════ -->
+
+    <!-- 1. Recursos e dados -->
     <script src="./js/resources.js"></script>
     <script src="./js/ofertas-ml.js"></script>
     <script src="./js/ofertas-shopee.js"></script>
     <script src="./js/ofertas-amazon.js"></script>
+
+    <!-- 2. Plataformas -->
     <script src="./js/platforms/ml.js"></script>
     <script src="./js/platforms/shopee.js"></script>
     <script src="./js/platforms/amazon.js"></script>
     <script src="./js/platforms/platform.js"></script>
+
+    <!-- 3. Módulos (dependências primeiro) -->
     <script src="./modules/utils.js"></script>
     <script src="./modules/state.js"></script>
     <script src="./modules/auth.js"></script>
@@ -197,12 +182,14 @@
     <script src="./modules/filters.js"></script>
     <script src="./modules/products.js"></script>
     <script src="./modules/search.js"></script>
-    <script src="./components/hero.js"></script>
+
+    <!-- 4. Componentes -->
     <script src="./components/carousel.js"></script>
     <script src="./components/cards.js"></script>
-    <script src="./components/search-placeholder.js"></script>
     <script src="./components/pagination.js"></script>
     <script src="./components/search-placeholder.js"></script>
+
+    <!-- 5. Entrada -->
     <script src="./js/app.js"></script>
   </body>
 </html>
