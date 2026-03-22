@@ -45,6 +45,11 @@
         border-color: #ee4d2d;
         color: #fff;
       }
+      .tab-btn.amazon.active {
+        background: #ff9900;
+        border-color: #ff9900;
+        color: #000;
+      }
       .platform-badge {
         display: inline-block;
         font-size: 10px;
@@ -62,14 +67,13 @@
         background: #ee4d2d;
         color: #fff;
       }
+      .platform-amazon {
+        background: #ff9900;
+        color: #000;
+      }
       .rating {
         font-size: 11px;
         color: var(--muted);
-        font-family: "DM Mono", monospace;
-      }
-      .stock {
-        font-size: 11px;
-        color: var(--red);
         font-family: "DM Mono", monospace;
       }
     </style>
@@ -78,7 +82,6 @@
     <header>
       <div class="logo">flash<span>_ofertas</span></div>
     </header>
-
     <div class="main">
       <div class="tabs">
         <button class="tab-btn active" onclick="setTab('ml-categoria')">
@@ -89,6 +92,9 @@
         </button>
         <button class="tab-btn shopee" onclick="setTab('shopee-relampago')">
           🛍 Shopee Flash
+        </button>
+        <button class="tab-btn amazon" onclick="setTab('amazon-ofertas')">
+          🛒 Amazon Ofertas
         </button>
       </div>
 
@@ -123,7 +129,6 @@
       </div>
 
       <div class="status" id="status"></div>
-
       <div id="output">
         <div class="empty-state">
           <div class="icon">🛍</div>
@@ -132,9 +137,9 @@
       </div>
     </div>
 
-    <!-- Dados das plataformas -->
     <script src="./js/ofertas-ml.js"></script>
     <script src="./js/ofertas-shopee.js"></script>
+    <script src="./js/ofertas-amazon.js"></script>
     <script src="./js/app.js"></script>
   </body>
 </html>

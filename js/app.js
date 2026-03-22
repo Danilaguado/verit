@@ -37,7 +37,6 @@ let allProducts = [];
 let modoAtivo = "ml-categoria";
 let countdownInt = null;
 
-// ─── UTILS ────────────────────────────────────────────────
 const fmt = (n) =>
   "R$ " +
   n.toLocaleString("pt-BR", {
@@ -48,12 +47,11 @@ const fmt = (n) =>
 function linkML(url) {
   if (!url || url.includes("undefined")) return null;
   let u = url;
-  if (u.match(/mercadolivre\.com\.br\/MLB-/)) {
+  if (u.match(/mercadolivre\.com\.br\/MLB-/))
     u = u.replace(
       "www.mercadolivre.com.br/MLB-",
       "produto.mercadolivre.com.br/MLB-",
     );
-  }
   return u.includes(AFILIADO)
     ? u
     : u + (u.includes("?") ? "&" : "?") + AFILIADO;
@@ -102,7 +100,6 @@ function startCountdowns() {
   }, 1000);
 }
 
-// ─── TABS ─────────────────────────────────────────────────
 function setTab(tab) {
   modoAtivo = tab;
   stopCountdowns();
@@ -114,19 +111,53 @@ function setTab(tab) {
     .classList.add("active");
   document.getElementById("catRow").style.display =
     tab === "ml-categoria" ? "" : "none";
+  document.getElementById("output").innerHTML =
+    '<div class="empty-state">Carregando...</div>';
+  document.getElementById("countBadge").textContent = "";
 
-  if (tab === "ml-relampago") carregarML();
-  else if (tab === "shopee-relampago") carregarShopee();
+  if (tab === "ml-relampago")
+    carregarDados(window.OFERTAS_ML, "⚡", "ML Relâmpago");
+  else if (tab === "shopee-relampago")
+    carregarDados(window.OFERTAS_SHOPEE, "🛍", "Shopee Flash");
+  else if (tab === "amazon-ofertas")
+    carregarDados(window.OFERTAS_AMAZON, "🛒", "Amazon Ofertas");
   else {
     allProducts = [];
     document.getElementById("output").innerHTML =
       '<div class="empty-state"><div class="icon">🛍</div>Selecione uma categoria e clique em Buscar.</div>';
-    document.getElementById("countBadge").textContent = "";
     setStatus("");
   }
 }
 
-// ─── CATEGORIAS ───────────────────────────────────────────
+function carregarDados(source, icon, nome) {
+  allProducts = (source || []).filter((p) => p.title && p.price && p.permalink);
+  if (!allProducts.length) {
+    setStatus("Nenhuma oferta de " + nome + " disponível.", "error");
+    document.getElementById("output").innerHTML =
+      '<div class="empty-state"><div class="icon">' +
+      icon +
+      "</div>Nenhuma oferta no momento.</div>";
+    return;
+  }
+  const primeiro = allProducts.find((p) => p.expires_at);
+  if (primeiro) {
+    const expira = new Date(primeiro.expires_at);
+    setStatus(
+      allProducts.length +
+        " ofertas " +
+        nome +
+        " — encerram às " +
+        expira.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+    );
+  } else {
+    setStatus(allProducts.length + " ofertas " + nome + " carregadas.");
+  }
+  renderProducts();
+}
+
 function loadCategories() {
   const sel = document.getElementById("categorySelect");
   CATS.forEach((c) => {
@@ -137,7 +168,6 @@ function loadCategories() {
   });
 }
 
-// ─── RENDER ───────────────────────────────────────────────
 function renderProducts() {
   const only = document.getElementById("onlyDiscount").checked;
   const list = only
@@ -162,7 +192,7 @@ function renderProducts() {
     '<div class="grid">' +
     list
       .map((p) => {
-        const isShopee = p.platform === "shopee";
+        const platform = p.platform || "ml";
         const thumb = p.thumbnail
           ? p.thumbnail.replace("http://", "https://")
           : "";
@@ -172,17 +202,25 @@ function renderProducts() {
           (disc
             ? Math.round((1 - p.price / p.original_price) * 100) + "% OFF"
             : "");
-        const url = isShopee ? p.permalink : linkML(p.permalink);
+        const url = platform === "ml" ? linkML(p.permalink) : p.permalink;
         const linkAttr = url
           ? 'href="' + url + '" target="_blank" rel="noopener"'
           : 'href="#"';
 
-        const platformBadge =
-          '<span class="platform-badge ' +
-          (isShopee ? "platform-shopee" : "platform-ml") +
-          '">' +
-          (isShopee ? "🛍 Shopee" : "⚡ Mercado Livre") +
-          "</span>";
+        const badgeClass =
+          platform === "shopee"
+            ? "platform-shopee"
+            : platform === "amazon"
+              ? "platform-amazon"
+              : "platform-ml";
+        const badgeText =
+          platform === "shopee"
+            ? "🛍 Shopee"
+            : platform === "amazon"
+              ? "🛒 Amazon"
+              : "⚡ Mercado Livre";
+        const badgeIcon =
+          platform === "shopee" ? "🛍" : platform === "amazon" ? "🛒" : "⚡";
 
         const countdown = p.expires_at
           ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
@@ -195,7 +233,7 @@ function renderProducts() {
           : "";
 
         const rating =
-          isShopee && p.rating
+          platform === "shopee" && p.rating
             ? '<div class="rating">⭐ ' +
               p.rating.toFixed(1) +
               (p.stock ? " · " + p.stock + " em estoque" : "") +
@@ -210,7 +248,11 @@ function renderProducts() {
           thumb +
           '" alt="" loading="lazy"/></a>' +
           '<div class="card-body">' +
-          platformBadge +
+          '<span class="platform-badge ' +
+          badgeClass +
+          '">' +
+          badgeText +
+          "</span>" +
           countdown +
           (p.brand
             ? "<div style=\"font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;\">" +
@@ -229,11 +271,7 @@ function renderProducts() {
           fmt(p.price) +
           "</div>" +
           (pct
-            ? '<span class="badge">' +
-              (isShopee ? "🛍" : "⚡") +
-              " " +
-              pct +
-              "</span>"
+            ? '<span class="badge">' + badgeIcon + " " + pct + "</span>"
             : "") +
           "</div></div>" +
           '<a class="card-link" ' +
@@ -248,78 +286,18 @@ function renderProducts() {
   if (modoAtivo !== "ml-categoria") startCountdowns();
 }
 
-// ─── LOADERS ──────────────────────────────────────────────
-function carregarML() {
-  allProducts = (window.OFERTAS_ML || []).filter(
-    (p) =>
-      p.title && p.price && p.permalink && !p.permalink.includes("undefined"),
-  );
-  if (!allProducts.length) {
-    setStatus("Nenhuma oferta relâmpago do ML disponível.", "error");
-    document.getElementById("output").innerHTML =
-      '<div class="empty-state"><div class="icon">⚡</div>Nenhuma oferta no momento.</div>';
-    return;
-  }
-  const primeiro = allProducts.find((p) => p.expires_at);
-  if (primeiro) {
-    const expira = new Date(primeiro.expires_at);
-    setStatus(
-      allProducts.length +
-        " ofertas ML — encerram às " +
-        expira.toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-    );
-  } else {
-    setStatus(allProducts.length + " ofertas relâmpago ML carregadas.");
-  }
-  document.getElementById("countBadge").textContent = "";
-  renderProducts();
-}
-
-function carregarShopee() {
-  allProducts = (window.OFERTAS_SHOPEE || []).filter(
-    (p) => p.title && p.price && p.permalink,
-  );
-  if (!allProducts.length) {
-    setStatus("Nenhuma oferta flash da Shopee disponível.", "error");
-    document.getElementById("output").innerHTML =
-      '<div class="empty-state"><div class="icon">🛍</div>Nenhuma oferta no momento.</div>';
-    return;
-  }
-  const primeiro = allProducts.find((p) => p.expires_at);
-  if (primeiro) {
-    const expira = new Date(primeiro.expires_at);
-    setStatus(
-      allProducts.length +
-        " ofertas Shopee — encerram às " +
-        expira.toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-    );
-  } else {
-    setStatus(allProducts.length + " ofertas flash Shopee carregadas.");
-  }
-  document.getElementById("countBadge").textContent = "";
-  renderProducts();
-}
-
 async function buscarProdutos() {
   const catId = document.getElementById("categorySelect").value;
   if (!catId) {
     setStatus("Selecione uma categoria.", "error");
     return;
   }
-
   const btn = document.getElementById("btnBuscar");
   btn.disabled = true;
   document.getElementById("output").innerHTML =
     '<div class="empty-state">Carregando...</div>';
   document.getElementById("countBadge").textContent = "";
   setStatus("Buscando produtos...", "loading");
-
   try {
     const res = await fetch(API_URL + "?categoria=" + catId);
     if (!res.ok) throw new Error("Erro HTTP " + res.status);
@@ -348,7 +326,6 @@ async function buscarProdutos() {
   btn.disabled = false;
 }
 
-// ─── INIT ─────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   loadCategories();
 });

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Extrator Amazon</title>
+    <style>
+      body {
+        font-family: monospace;
+        background: #1a1a1a;
+        color: #fff;
+        padding: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #ff9900;
+        font-size: 20px;
+        margin-bottom: 0.5rem;
+      }
+      p {
+        color: #aaa;
+        font-size: 13px;
+        margin-bottom: 1.5rem;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        background: #111;
+        color: #0f0;
+        border: 1px solid #333;
+        padding: 12px;
+        font-size: 12px;
+        border-radius: 8px;
+        resize: vertical;
+      }
+      .btn {
+        background: #ff9900;
+        color: #000;
+        border: none;
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 12px;
+      }
+      .btn:hover {
+        background: #e68900;
+      }
+      .result {
+        margin-top: 1.5rem;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 12px;
+        display: none;
+      }
+      .result h2 {
+        color: #ff9900;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .log {
+        font-size: 12px;
+        color: #0f0;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .download-btn {
+        background: #232f3e;
+        color: #ff9900;
+        border: 1px solid #ff9900;
+        padding: 8px 20px;
+        font-size: 13px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      .download-btn:hover {
+        background: #ff9900;
+        color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🛒 Extrator de Ofertas Amazon</h1>
+    <p>
+      1. Na aba Network do DevTools, clica em qualquer requisição
+      <b>promotions?pageSize=30</b><br />
+      2. Vai em <b>Resposta</b> → seleciona tudo → copia<br />
+      3. Cola aqui e clica em Extrair<br />
+      4. Repete para cada página e clica em Baixar JS quando terminar
+    </p>
+
+    <textarea
+      id="jsonInput"
+      placeholder="Cole aqui o JSON copiado da aba Resposta..."
+    ></textarea>
+    <br />
+    <button class="btn" onclick="extrair()">⚡ Extrair Produtos</button>
+    <button
+      class="btn"
+      style="
+        background: #232f3e;
+        color: #ff9900;
+        border: 1px solid #ff9900;
+        margin-left: 8px;
+      "
+      onclick="limpar()"
+    >
+      🗑 Limpar
+    </button>
+
+    <div class="result" id="result">
+      <h2>📦 Resultado</h2>
+      <div class="log" id="log"></div>
+      <button class="download-btn" onclick="baixar()">
+        ⬇ Baixar ofertas-amazon.js
+      </button>
+      <button
+        class="download-btn"
+        style="margin-left: 8px"
+        onclick="copiarJSON()"
+      >
+        📋 Copiar JSON
+      </button>
+    </div>
+
+    <script>
+      var todos = [];
+
+      function log(msg) {
+        var el = document.getElementById("log");
+        el.textContent += msg + "\n";
+        el.scrollTop = el.scrollHeight;
+      }
+
+      function extrair() {
+        var input = document.getElementById("jsonInput").value.trim();
+        if (!input) {
+          alert("Cole o JSON primeiro!");
+          return;
+        }
+
+        try {
+          var d = JSON.parse(input);
+          var promos = d?.entity?.rankedPromotions || [];
+          if (!promos.length) {
+            log("❌ Nenhuma promoção encontrada neste JSON.");
+            return;
+          }
+
+          var novos = 0;
+          promos.forEach(function (p) {
+            var prod = p.product?.entity;
+            if (!prod) return;
+            var asin = prod.asin;
+            var title = prod.title?.entity?.displayString ?? "";
+            var linkPath = prod.links?.entity?.viewOnAmazon?.url ?? "";
+            var permalink = "https://www.amazon.com.br" + linkPath;
+            var pe = prod.buyingOptions?.[0]?.price?.entity;
+            var price = parseFloat(
+              pe?.priceToPay?.moneyValueOrRange?.value?.amount ?? 0,
+            );
+            var original = parseFloat(
+              pe?.basisPrice?.moneyValueOrRange?.value?.amount ?? 0,
+            );
+            var discount = pe?.savings?.percentage?.displayString ?? null;
+            var images = prod.productImages?.entity?.images ?? [];
+            var pid =
+              images[0]?.lowRes?.physicalId ??
+              images[0]?.hiRes?.physicalId ??
+              null;
+            var thumbnail = pid
+              ? "https://m.media-amazon.com/images/I/" + pid + "._SL500_.jpg"
+              : null;
+            var expires = p.deal?.endTime ?? null;
+            if (!title || !price) return;
+            if (
+              todos.find(function (x) {
+                return x.id === asin;
+              })
+            )
+              return;
+            todos.push({
+              id: asin,
+              title: title,
+              price: price,
+              original_price: original > price ? original : null,
+              discount: discount,
+              expires_at: expires,
+              thumbnail: thumbnail,
+              permalink: permalink,
+              platform: "amazon",
+            });
+            novos++;
+          });
+
+          document.getElementById("result").style.display = "block";
+          log(
+            "✅ +" +
+              novos +
+              " novos produtos | Total acumulado: " +
+              todos.length,
+          );
+          document.getElementById("jsonInput").value = "";
+        } catch (e) {
+          log("❌ Erro ao processar JSON: " + e.message);
+        }
+      }
+
+      function limpar() {
+        todos = [];
+        document.getElementById("log").textContent = "";
+        document.getElementById("result").style.display = "none";
+        document.getElementById("jsonInput").value = "";
+      }
+
+      function baixar() {
+        var content =
+          "// Amazon Ofertas\n// Gerado em " +
+          new Date().toLocaleDateString("pt-BR") +
+          "\nvar OFERTAS_AMAZON = " +
+          JSON.stringify(todos, null, 2) +
+          ";\n";
+        var blob = new Blob([content], { type: "text/javascript" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "ofertas-amazon.js";
+        a.click();
+        log(
+          "📥 Arquivo baixado: ofertas-amazon.js (" +
+            todos.length +
+            " produtos)",
+        );
+      }
+
+      function copiarJSON() {
+        navigator.clipboard.writeText(JSON.stringify(todos, null, 2));
+        log("📋 JSON copiado para o clipboard!");
+      }
+    </script>
+  </body>
+</html>
