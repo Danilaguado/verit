@@ -1,65 +1,55 @@
 export default async function handler(request, response) {
-  const categoria = request.query.categoria;
+  const { categoria } = request.query;
 
-  if (!categoria) {
-    return response.status(400).json({ error: "Falta la categoria" });
-  }
-
-  const APP_ID = process.env.APP_ID;
-  const CLIENT_SECRET = process.env.CLIENT_SECRET;
-  const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-
-  // 1. Diagnóstico: Verificamos si Vercel sí está cargando las variables
-  if (!APP_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
-    return response.status(500).json({
-      error: "Vercel no está leyendo las variables de entorno",
-      variables_leidas: {
-        APP_ID_existe: !!APP_ID,
-        CLIENT_SECRET_existe: !!CLIENT_SECRET,
-        REFRESH_TOKEN_existe: !!REFRESH_TOKEN,
-      },
-    });
-  }
+  // ─── CONFIGURAÇÃO ─────────────────────────────────────────
+  const APP_ID = process.env.APP_ID || "3303067719048967";
+  const CLIENT_SECRET =
+    process.env.CLIENT_SECRET || "Fwm0jA6sQPX8AflQlFYRJ3xSGtjJ9Hzh";
+  // ──────────────────────────────────────────────────────────
 
   try {
-    const tokenParams = new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: APP_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: REFRESH_TOKEN,
-    });
-
-    const tokenReq = await fetch("https://api.mercadolibre.com/oauth/token", {
+    // 1. Gera token com client_credentials (sem precisar de login do usuário)
+    const tokenRes = await fetch("https://api.mercadolibre.com/oauth/token", {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: tokenParams.toString(),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: APP_ID,
+        client_secret: CLIENT_SECRET,
+      }),
     });
 
-    const tokenData = await tokenReq.json();
+    const tokenData = await tokenRes.json();
 
-    // 2. Diagnóstico: Mostramos el error EXACTO que devuelve Mercado Libre
     if (!tokenData.access_token) {
-      return response.status(400).json({
-        error: "Mercado Libre rechazó la petición",
-        respuesta_oficial_ml: tokenData,
+      return response.status(401).json({
+        error: "Falha ao gerar token",
+        detalhes: tokenData,
       });
     }
 
-    const mlUrl = `https://api.mercadolibre.com/sites/MLB/search?category=${categoria}&limit=20&sort=relevance`;
-    const mlReq = await fetch(mlUrl, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
-        Accept: "application/json",
+    // 2. Busca produtos da categoria
+    const targetCat = categoria || "MLB1144";
+    const mlRes = await fetch(
+      `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=20&sort=relevance`,
+      {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/json",
+        },
       },
-    });
+    );
 
-    const mlData = await mlReq.json();
+    const data = await mlRes.json();
 
-    return response.status(200).json(mlData);
+    if (data.error || data.status === 403) {
+      return response.status(mlRes.status).json({
+        error: data.error || data.message,
+        detalhes: data,
+      });
+    }
+
+    return response.status(200).json(data);
   } catch (error) {
     return response.status(500).json({ error: error.message });
   }
