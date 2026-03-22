@@ -49,10 +49,10 @@
 
     <div class="main">
       <div class="tabs">
-        <button class="tab-btn active" data-tab="categoria">
+        <button class="tab-btn active" onclick="setTab('categoria')">
           📂 Por categoria
         </button>
-        <button class="tab-btn" data-tab="relampago">
+        <button class="tab-btn" onclick="setTab('relampago')">
           ⚡ Ofertas relâmpago
         </button>
       </div>
@@ -67,14 +67,21 @@
                 <option value="">Selecione uma categoria...</option>
               </select>
             </div>
-            <button class="btn" id="btnBuscar">Buscar →</button>
+            <button class="btn" id="btnBuscar" onclick="buscarProdutos()">
+              Buscar →
+            </button>
           </div>
         </div>
       </div>
 
       <div class="filter-bar">
         <label class="toggle-label">
-          <input type="checkbox" id="onlyDiscount" checked />
+          <input
+            type="checkbox"
+            id="onlyDiscount"
+            checked
+            onchange="renderProducts()"
+          />
           Somente com desconto
         </label>
         <span class="count" id="countBadge"></span>
@@ -90,6 +97,6 @@
       </div>
     </div>
 
-    <script src="./js/app.js?v=2"></script>
+    <script src="./js/app.js"></script>
   </body>
 </html>
