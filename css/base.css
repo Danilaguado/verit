@@ -21,16 +21,14 @@
 
 html,
 body {
-  height: 100%;
-  overflow: hidden;
   font-family: "DM Sans", sans-serif;
   background: var(--bg);
   color: var(--text);
+  /* SEM overflow hidden — a página rola normalmente */
 }
 
-/* Layout fixo 100vh */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
 }

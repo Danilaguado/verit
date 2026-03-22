@@ -1,13 +1,15 @@
 /* ═══════════════════════════════════════════════════
-   CONTROLES: Busca e Filtros
+   CONTROLES: Busca e Filtros (sticky no topo)
 ═══════════════════════════════════════════════════ */
 .controls {
-  flex-shrink: 0;
-  padding: 0.75rem 1.5rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: var(--bg);
+  padding: 0.75rem 1.5rem 0;
+  border-bottom: 1px solid var(--border);
 }
 
-/* Busca */
 .search-row {
   margin-bottom: 0.75rem;
 }
@@ -26,7 +28,6 @@
   border-color: var(--text);
 }
 
-/* Filtros de categoria */
 .cat-filters {
   display: flex;
   gap: 6px;
@@ -56,7 +57,6 @@
   border-color: var(--text);
 }
 
-/* Info bar */
 .info-bar {
   display: flex;
   justify-content: space-between;
