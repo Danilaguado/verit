@@ -4,30 +4,17 @@
 header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
-  background: var(--primary);
-  padding: 0.65rem 1.25rem;
+  background: var(--primary-grad);
+  padding: 0.6rem 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-.logo {
-  font-family: "DM Mono", monospace;
-  font-size: 17px;
-  font-weight: 600;
-  color: #fff;
-  flex: 1;
-}
-.logo span {
-  color: var(--accent);
-}
-
-/* Barra de busca no header */
 .header-search {
-  flex: 2;
-  position: relative;
+  flex: 1;
 }
 .header-search input {
   width: 100%;
@@ -36,49 +23,40 @@ header {
   padding: 8px 14px;
   border: none;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
   outline: none;
-  backdrop-filter: blur(4px);
 }
 .header-search input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.75);
 }
 .header-search input:focus {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Botão login */
-.btn-login {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.btn-login:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.extrator-btn {
-  font-family: "DM Mono", monospace;
-  font-size: 11px;
-  color: #000;
-  background: #ff9900;
-  padding: 5px 10px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  flex-shrink: 0;
+.btn-login {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
 }
-.extrator-btn:hover {
-  background: #e68900;
+.btn-login:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.extrator-btn {
+  font-size: 18px;
+  text-decoration: none;
+  line-height: 1;
+  padding: 4px;
 }

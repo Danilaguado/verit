@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// MÓDULO: PRODUTOS (orquestra tudo)
+// MÓDULO: PRODUTOS
 // ═══════════════════════════════════════════════════
 const Products = {
   load() {
@@ -14,7 +14,6 @@ const Products = {
     );
 
     State.allProducts = [...ml, ...shopee, ...amazon];
-
     Utils.setStatus(
       "ML: " +
         ml.length +
@@ -29,6 +28,21 @@ const Products = {
 
   applyFilters() {
     State.filteredList = Filters.apply(State.allProducts);
+    // Reconstrói categorias baseadas nos produtos visíveis da plataforma atual
+    const visibleForPlatform = PlatformFilter.filter(State.allProducts);
+    Filters.buildCategoryButtons(visibleForPlatform);
+    // Mantém categoria ativa se existir, senão reseta para "todas"
+    const activeCat = Filters.catAtiva;
+    const catExists = visibleForPlatform.some(
+      (p) => Filters.getCategoryLabel(p) === activeCat,
+    );
+    if (!catExists) Filters.catAtiva = "todas";
+    document
+      .querySelectorAll(".cat-btn")
+      .forEach((b) =>
+        b.classList.toggle("active", b.dataset.cat === Filters.catAtiva),
+      );
+
     State.paginaAtual = 1;
     this.renderPage();
   },

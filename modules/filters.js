@@ -23,10 +23,7 @@ const Filters = {
     if (!el) return;
 
     let html =
-      '<button class="cat-btn active" data-cat="todas" onclick="Filters.setCategory(\'todas\')">' +
-      "Todas (" +
-      allProducts.length +
-      ")</button>";
+      '<button class="cat-btn active" data-cat="todas" onclick="Filters.setCategory(\'todas\')">Todas</button>';
     cats.forEach(([cat, count]) => {
       html +=
         '<button class="cat-btn" data-cat="' +
@@ -35,9 +32,9 @@ const Filters = {
         cat.replace(/\\/g, "\\\\").replace(/'/g, "\\'") +
         "')\">" +
         cat +
-        " (" +
+        ' <span style="opacity:.5;font-size:11px;">(' +
         count +
-        ")</button>";
+        ")</span></button>";
     });
     el.innerHTML = html;
   },
@@ -55,7 +52,10 @@ const Filters = {
     const q = Utils.normalize(
       document.getElementById("searchInput")?.value?.trim() || "",
     );
-    return allProducts.filter((p) => {
+    // Primeiro filtra por plataforma
+    let list = PlatformFilter.filter(allProducts);
+    // Depois por categoria
+    list = list.filter((p) => {
       const matchCat =
         this.catAtiva === "todas" || this.getCategoryLabel(p) === this.catAtiva;
       const matchSearch =
@@ -65,5 +65,6 @@ const Filters = {
         Utils.normalize(p.category || "").includes(q);
       return matchCat && matchSearch;
     });
+    return list;
   },
 };
