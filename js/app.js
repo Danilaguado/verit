@@ -16,6 +16,14 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
+// Normaliza texto removendo acentos e convertendo para minúsculas
+function normalize(str) {
+  return (str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function linkML(url) {
   if (!url || url.includes("undefined")) return null;
   let u = url;
@@ -78,7 +86,6 @@ function startCountdowns() {
 
 // ─── CATEGORIAS DINÂMICAS ─────────────────────────────────
 function getCategoryLabel(p) {
-  // Amazon tem category, Shopee e ML usamos platform como fallback
   if (p.category) return p.category;
   if (p.platform === "shopee") return "Shopee";
   if (p.platform === "ml") return "Mercado Livre";
@@ -92,20 +99,18 @@ function buildCategoryFilters() {
     if (cat) counts[cat] = (counts[cat] || 0) + 1;
   });
 
-  // Ordena por quantidade
   const cats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
   const el = document.getElementById("catFilters");
   let html =
     '<button class="cat-btn active" data-cat="todas" onclick="setCategoria(\'todas\')">Todas (' +
     allProducts.length +
     ")</button>";
-  cats.forEach(([cat, count]) => {
+  cats.forEach(function ([cat, count]) {
     html +=
       '<button class="cat-btn" data-cat="' +
       cat +
       '" onclick="setCategoria(\'' +
-      cat.replace(/'/g, "\\'") +
+      cat.replace(/\\/g, "\\\\").replace(/'/g, "\\'") +
       "')\">" +
       cat +
       " (" +
@@ -126,17 +131,16 @@ function setCategoria(cat) {
 
 // ─── FILTROS ──────────────────────────────────────────────
 function aplicarFiltros() {
-  const q = document.getElementById("searchInput").value.trim().toLowerCase();
-  const only = document.getElementById("onlyDiscount").checked;
+  const q = normalize(document.getElementById("searchInput").value.trim());
 
   filteredList = allProducts.filter((p) => {
     const matchCat = catAtiva === "todas" || getCategoryLabel(p) === catAtiva;
     const matchSearch =
       !q ||
-      p.title.toLowerCase().includes(q) ||
-      (p.brand && p.brand.toLowerCase().includes(q));
-    const matchDisc = !only || (p.original_price && p.original_price > p.price);
-    return matchCat && matchSearch && matchDisc;
+      normalize(p.title).includes(q) ||
+      normalize(p.brand || "").includes(q) ||
+      normalize(p.category || "").includes(q);
+    return matchCat && matchSearch;
   });
 
   paginaAtual = 1;
@@ -159,7 +163,10 @@ function renderPage() {
 function goPage(n) {
   paginaAtual = n;
   renderPage();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  // Scroll suave só até o topo da área de produtos, não da página toda
+  const area = document.getElementById("produtos-area");
+  const top = area.getBoundingClientRect().top + window.scrollY - 80;
+  window.scrollTo({ top: top, behavior: "smooth" });
 }
 
 function renderPagination(pages) {
@@ -168,14 +175,16 @@ function renderPagination(pages) {
     el.innerHTML = "";
     return;
   }
-  let html =
-    '<button class="page-btn" ' +
-    (paginaAtual > 1
-      ? 'onclick="goPage(' + (paginaAtual - 1) + ')"'
-      : "disabled") +
-    ">‹</button>";
+
+  const prev = paginaAtual > 1;
+  const next = paginaAtual < pages;
   const start = Math.max(1, Math.min(paginaAtual - 3, pages - 6));
   const end = Math.min(pages, start + 6);
+
+  let html =
+    '<button class="page-btn" ' +
+    (prev ? 'onclick="goPage(' + (paginaAtual - 1) + ')"' : "disabled") +
+    ">‹</button>";
   for (let i = start; i <= end; i++) {
     html +=
       '<button class="page-btn' +
@@ -188,9 +197,7 @@ function renderPagination(pages) {
   }
   html +=
     '<button class="page-btn" ' +
-    (paginaAtual < pages
-      ? 'onclick="goPage(' + (paginaAtual + 1) + ')"'
-      : "disabled") +
+    (next ? 'onclick="goPage(' + (paginaAtual + 1) + ')"' : "disabled") +
     ">›</button>";
   el.innerHTML = html;
 }
@@ -331,12 +338,9 @@ document.addEventListener("DOMContentLoaded", function () {
   );
   buildCategoryFilters();
   filteredList = allProducts;
-  aplicarFiltros();
+  renderPage();
 
   document
     .getElementById("searchInput")
     .addEventListener("input", aplicarFiltros);
-  document
-    .getElementById("onlyDiscount")
-    .addEventListener("change", aplicarFiltros);
 });

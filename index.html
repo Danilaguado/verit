@@ -19,11 +19,9 @@
         gap: 10px;
         margin-bottom: 1rem;
         align-items: center;
-        flex-wrap: wrap;
       }
       .search-row input {
         flex: 1;
-        min-width: 200px;
         font-family: "DM Sans", sans-serif;
         font-size: 14px;
         padding: 10px 14px;
@@ -84,12 +82,28 @@
         background: #ff9900;
         color: #000;
       }
+      /* Grid: 2 colunas em mobile, auto em desktop */
+      .grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      @media (min-width: 600px) {
+        .grid {
+          grid-template-columns: repeat(
+            auto-fill,
+            minmax(190px, 1fr)
+          ) !important;
+        }
+      }
+      /* Área dos produtos com altura fixa e scroll interno */
+      #produtos-area {
+        position: relative;
+      }
       .pagination {
         display: flex;
         gap: 6px;
         justify-content: center;
         flex-wrap: wrap;
-        margin-top: 2rem;
+        margin-top: 1.5rem;
         padding-bottom: 2rem;
       }
       .page-btn {
@@ -140,7 +154,6 @@
     </header>
 
     <div class="main">
-      <!-- Barra de busca -->
       <div class="search-row">
         <input
           type="text"
@@ -148,26 +161,23 @@
           placeholder="🔍 Buscar entre todas as ofertas..."
         />
       </div>
-
-      <!-- Filtros de categoria dinâmicos -->
       <div class="cat-filters" id="catFilters"></div>
-
-      <div class="filter-bar">
-        <label class="toggle-label">
-          <input type="checkbox" id="onlyDiscount" checked />
-          Somente com desconto
-        </label>
+      <div
+        style="display: flex; justify-content: flex-end; margin-bottom: 1rem"
+      >
         <span class="count" id="countBadge"></span>
       </div>
-
       <div class="status" id="status"></div>
-      <div id="output">
-        <div class="empty-state">
-          <div class="icon">⚡</div>
-          Carregando ofertas...
+      <!-- Âncora para scroll suave ao trocar página -->
+      <div id="produtos-area">
+        <div id="output">
+          <div class="empty-state">
+            <div class="icon">⚡</div>
+            Carregando ofertas...
+          </div>
         </div>
+        <div class="pagination" id="pagination"></div>
       </div>
-      <div class="pagination" id="pagination"></div>
     </div>
 
     <script src="./js/ofertas-ml.js"></script>
