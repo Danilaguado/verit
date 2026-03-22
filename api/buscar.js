@@ -36,52 +36,42 @@ export default async function handler(request, response) {
   };
 
   try {
-    // Pega IDs do highlights
+    // Pega IDs do highlights (são product IDs)
     const highlightRes = await fetch(
       `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
       { headers },
     );
     const highlightData = await highlightRes.json();
-    const ids = (highlightData.content || []).slice(0, 20).map((i) => i.id);
+    const productIds = (highlightData.content || [])
+      .slice(0, 20)
+      .map((i) => i.id);
 
-    if (!ids.length) {
-      return response
-        .status(200)
-        .json({ error: "Highlights sem IDs", raw: highlightData });
+    if (!productIds.length) {
+      return response.status(200).json({ results: [] });
     }
 
-    // Testa 3 formas de buscar os detalhes
-    const url1 = `https://api.mercadolibre.com/items?ids=${ids.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink`;
-    const url2 = `https://api.mercadolibre.com/items/${ids[0]}`;
-    const url3 = `https://api.mercadolibre.com/items/${ids[0]}?access_token=${ACCESS_TOKEN}`;
+    // Busca cada produto via /products/:id — retorna listings (itens à venda)
+    const productResults = await Promise.all(
+      productIds.map((pid) =>
+        fetch(`https://api.mercadolibre.com/products/${pid}`, { headers })
+          .then((r) => r.json())
+          .catch(() => null),
+      ),
+    );
 
-    const [r1, r2, r3] = await Promise.all([
-      fetch(url1, { headers }).then(async (r) => ({
-        status: r.status,
-        body: await r.text(),
-      })),
-      fetch(url2, { headers }).then(async (r) => ({
-        status: r.status,
-        body: await r.text(),
-      })),
-      fetch(url3).then(async (r) => ({
-        status: r.status,
-        body: await r.text(),
-      })),
-    ]);
+    const results = productResults
+      .filter((p) => p && !p.error && p.id)
+      .map((p) => ({
+        id: p.id,
+        title: p.name || p.title,
+        price: p.buy_box_winner?.price ?? null,
+        original_price: p.buy_box_winner?.original_price ?? null,
+        thumbnail: p.pictures?.[0]?.url ?? p.thumbnail ?? null,
+        permalink: `https://www.mercadolivre.com.br/p/${p.id}`,
+        condition: p.buy_box_winner?.condition ?? null,
+      }));
 
-    return response.status(200).json({
-      ids_encontrados: ids,
-      multiget: { status: r1.status, sample: r1.body.substring(0, 300) },
-      item_unico_header: {
-        status: r2.status,
-        sample: r2.body.substring(0, 300),
-      },
-      item_unico_queryparam: {
-        status: r3.status,
-        sample: r3.body.substring(0, 300),
-      },
-    });
+    return response.status(200).json({ results });
   } catch (error) {
     return response.status(500).json({ error: error.message });
   }
