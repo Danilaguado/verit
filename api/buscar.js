@@ -35,54 +35,82 @@ export default async function handler(request, response) {
   };
 
   try {
-    // 1. Pega IDs do highlights
+    // 1. Tenta highlights da categoria
     const highlightRes = await fetch(
       `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
       { headers },
     );
-    const highlightData = await highlightRes.json();
-    const productIds = (highlightData.content || [])
-      .slice(0, 20)
-      .map((i) => i.id);
+
+    // Se highlights falhou ou não tem conteúdo, tenta subcategorias
+    let productIds = [];
+
+    if (highlightRes.ok) {
+      const highlightData = await highlightRes.json();
+      productIds = (highlightData.content || []).slice(0, 20).map((i) => i.id);
+    }
+
+    // Se a categoria não tem highlights, busca subcategorias e tenta nelas
+    if (!productIds.length) {
+      const catRes = await fetch(
+        `https://api.mercadolibre.com/categories/${targetCat}`,
+        { headers },
+      );
+      const catData = await catRes.json();
+      const children = (catData.children_categories || []).slice(0, 5);
+
+      // Tenta highlights de cada subcategoria até achar produtos
+      for (const child of children) {
+        const subRes = await fetch(
+          `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
+          { headers },
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          const ids = (subData.content || []).slice(0, 20).map((i) => i.id);
+          if (ids.length) {
+            productIds = ids;
+            break;
+          }
+        }
+      }
+    }
 
     if (!productIds.length) {
       return response.status(200).json({ results: [] });
     }
 
-    // 2. Para cada produto busca detalhes + melhor item com preço
+    // 2. Busca detalhes + preço de cada produto
     const results = await Promise.all(
       productIds.map(async (pid) => {
-        const [prodRes, itemsRes] = await Promise.all([
-          fetch(`https://api.mercadolibre.com/products/${pid}`, {
-            headers,
-          }).then((r) => r.json()),
-          fetch(`https://api.mercadolibre.com/products/${pid}/items?limit=1`, {
-            headers,
-          }).then((r) => r.json()),
-        ]);
+        try {
+          const [prodRes, itemsRes] = await Promise.all([
+            fetch(`https://api.mercadolibre.com/products/${pid}`, {
+              headers,
+            }).then((r) => r.json()),
+            fetch(
+              `https://api.mercadolibre.com/products/${pid}/items?limit=1`,
+              { headers },
+            ).then((r) => r.json()),
+          ]);
 
-        const item = itemsRes?.results?.[0] ?? null;
-        const price = item?.price ?? null;
-        const original_price = item?.original_price ?? null;
-        const itemId = item?.item_id ?? null;
-
-        // Permalink correto: usa o product page do ML
-        const permalink = `https://www.mercadolivre.com.br/p/${pid}`;
-
-        return {
-          id: pid,
-          title: prodRes.name || prodRes.title || "",
-          price,
-          original_price,
-          thumbnail: prodRes.pictures?.[0]?.url ?? null,
-          permalink,
-        };
+          const item = itemsRes?.results?.[0] ?? null;
+          return {
+            id: pid,
+            title: prodRes.name || prodRes.title || "",
+            price: item?.price ?? null,
+            original_price: item?.original_price ?? null,
+            thumbnail: prodRes.pictures?.[0]?.url ?? null,
+            permalink: `https://www.mercadolivre.com.br/p/${pid}`,
+          };
+        } catch {
+          return null;
+        }
       }),
     );
 
-    return response
-      .status(200)
-      .json({ results: results.filter((p) => p.title) });
+    return response.status(200).json({
+      results: results.filter((p) => p && p.title && p.price !== null),
+    });
   } catch (error) {
     return response.status(500).json({ error: error.message });
   }
