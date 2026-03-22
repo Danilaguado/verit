@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ML Ofertas</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="logo">ml<span>_ofertas</span></div>
+    </header>
+
+    <div class="main">
+      <div class="config-card">
+        <h2>Configuração</h2>
+        <div class="fields-row">
+          <div class="field">
+            <label>Categoria</label>
+            <select id="categorySelect">
+              <option value="">Selecione uma categoria...</option>
+            </select>
+          </div>
+          <button class="btn" id="btnBuscar">Buscar →</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <label class="toggle-label">
+          <input type="checkbox" id="onlyDiscount" checked />
+          Somente com desconto
+        </label>
+        <span class="count" id="countBadge"></span>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div id="output">
+        <div class="empty-state">
+          <div class="icon">🛍</div>
+          Selecione uma categoria e clique em Buscar.
+        </div>
+      </div>
+    </div>
+
+    <script src="./js/app.js"></script>
+  </body>
+</html>
