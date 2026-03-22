@@ -1,5 +1,5 @@
 export default async function handler(request, response) {
-  const { categoria, code, debug } = request.query;
+  const { categoria, code } = request.query;
 
   const APP_ID = process.env.APP_ID || "3303067719048967";
   const CLIENT_SECRET =
@@ -28,37 +28,62 @@ export default async function handler(request, response) {
       .json({ error: "ML_ACCESS_TOKEN não configurado." });
   }
 
+  const targetCat = categoria || "MLB1144";
   const headers = {
     Authorization: `Bearer ${ACCESS_TOKEN}`,
     Accept: "application/json",
   };
-  const pid = "MLB50196682"; // produto fixo para diagnóstico
 
-  // Testa todos os endpoints possíveis para pegar preço
-  const tests = await Promise.all([
-    fetch(`https://api.mercadolibre.com/products/${pid}/items?limit=1`, {
-      headers,
-    }).then(async (r) => ({
-      ep: "products/items",
-      status: r.status,
-      body: (await r.text()).substring(0, 300),
-    })),
-    fetch(
-      `https://api.mercadolibre.com/sites/MLB/search?catalog_product_id=${pid}&limit=1`,
+  try {
+    // 1. Pega IDs do highlights
+    const highlightRes = await fetch(
+      `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
       { headers },
-    ).then(async (r) => ({
-      ep: "search by catalog_product_id",
-      status: r.status,
-      body: (await r.text()).substring(0, 300),
-    })),
-    fetch(`https://api.mercadolibre.com/products/${pid}`, { headers }).then(
-      async (r) => ({
-        ep: "products detail",
-        status: r.status,
-        body: (await r.text()).substring(0, 500),
-      }),
-    ),
-  ]);
+    );
+    const highlightData = await highlightRes.json();
+    const productIds = (highlightData.content || [])
+      .slice(0, 20)
+      .map((i) => i.id);
 
-  return response.status(200).json({ diagnostico: tests });
+    if (!productIds.length) {
+      return response.status(200).json({ results: [] });
+    }
+
+    // 2. Para cada produto busca: detalhes do produto + melhor item (com preço)
+    const results = await Promise.all(
+      productIds.map(async (pid) => {
+        const [prodRes, itemsRes] = await Promise.all([
+          fetch(`https://api.mercadolibre.com/products/${pid}`, {
+            headers,
+          }).then((r) => r.json()),
+          fetch(`https://api.mercadolibre.com/products/${pid}/items?limit=1`, {
+            headers,
+          }).then((r) => r.json()),
+        ]);
+
+        const item = itemsRes?.results?.[0] ?? null;
+        const price = item?.price ?? null;
+        const original_price = item?.original_price ?? null;
+        const itemId = item?.item_id ?? null;
+        const permalink = itemId
+          ? `https://www.mercadolivre.com.br/MLB-${itemId.replace("MLB", "")}`
+          : `https://www.mercadolivre.com.br/p/${pid}`;
+
+        return {
+          id: pid,
+          title: prodRes.name || prodRes.title || "",
+          price,
+          original_price,
+          thumbnail: prodRes.pictures?.[0]?.url ?? null,
+          permalink,
+        };
+      }),
+    );
+
+    return response
+      .status(200)
+      .json({ results: results.filter((p) => p.title) });
+  } catch (error) {
+    return response.status(500).json({ error: error.message });
+  }
 }
