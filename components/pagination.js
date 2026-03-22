@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// COMPONENTE: PAGINAÇÃO
+// COMPONENTE: PAGINAÇÃO — com loader ao trocar página
 // ═══════════════════════════════════════════════════
 const Pagination = {
   POR_PAGINA: 50,
@@ -10,8 +10,7 @@ const Pagination = {
     if (!el) return;
 
     if (pages <= 1) {
-      el.innerHTML =
-        "<span style=\"font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);\">Página 1 de 1</span>";
+      el.innerHTML = "";
       return;
     }
 
@@ -43,9 +42,26 @@ const Pagination = {
   },
 
   goPage(n) {
-    State.paginaAtual = n;
-    Products.renderPage();
-    const scroll = document.getElementById("produtosScroll");
-    if (scroll) scroll.scrollTop = 0;
+    // Scroll imediato para o topo dos produtos
+    const anchor = document.getElementById("produtosScroll");
+    if (anchor) anchor.scrollIntoView({ block: "start" });
+    window.scrollTo({ top: 0 });
+
+    // Loader de transição (800ms)
+    const loader = document.getElementById("loader");
+    loader.style.display = "flex";
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        loader.classList.add("visible");
+        setTimeout(() => {
+          State.paginaAtual = n;
+          Products.renderPage();
+          loader.classList.remove("visible");
+          setTimeout(() => {
+            loader.style.display = "none";
+          }, 200);
+        }, 800);
+      }),
+    );
   },
 };

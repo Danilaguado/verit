@@ -2,10 +2,9 @@
 // APP: PONTO DE ENTRADA
 // ═══════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function () {
-  // ── Hero ──
   Hero.show();
 
-  // ── Banners fixos ──
+  // Banners
   const bf = document.getElementById("bannerFixo");
   const bfImg = document.getElementById("bannerFixoImg");
   if (Resources.bannerFixo?.src) {
@@ -26,20 +25,10 @@ document.addEventListener("DOMContentLoaded", function () {
     bs.style.display = "none";
   }
 
-  // ── Carrossel e Quick Links ──
   Carousel.init();
-  QuickLinks.init();
-
-  // ── Produtos ──
   Products.load();
 
-  // ── Busca ──
-  document.getElementById("searchInput").addEventListener("input", function () {
-    State.paginaAtual = 1;
-    Products.applyFilters();
-  });
-
-  // ── PWA instalação ──
+  // PWA
   let deferredPrompt = null;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
@@ -48,10 +37,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!deferredPrompt) return;
       const bar = document.createElement("div");
       bar.id = "installBar";
-      bar.innerHTML = `
-        <span>📲 Instale o Flash Ofertas!</span>
+      bar.innerHTML = `<span>📲 Instale o Flash Ofertas!</span>
         <button onclick="installApp()">Instalar</button>
-        <button onclick="this.parentElement.remove()" style="background:transparent;color:#fff;border:none;cursor:pointer;font-size:18px;padding:0 4px;">✕</button>`;
+        <button onclick="this.parentElement.remove()"
+          style="background:transparent;color:#fff;border:none;cursor:pointer;font-size:18px;padding:0 4px;">✕</button>`;
       bar.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:999;
         background:var(--primary);color:#fff;display:flex;align-items:center;
         gap:12px;padding:12px 1.5rem;font-family:'DM Sans',sans-serif;font-size:13px;`;

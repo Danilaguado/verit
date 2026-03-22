@@ -11,13 +11,12 @@ const Filters = {
     return null;
   },
 
-  buildCategoryButtons(allProducts) {
+  buildCategoryButtons(products) {
     const counts = {};
-    allProducts.forEach((p) => {
+    products.forEach((p) => {
       const cat = this.getCategoryLabel(p);
       if (cat) counts[cat] = (counts[cat] || 0) + 1;
     });
-
     const cats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const el = document.getElementById("catFilters");
     if (!el) return;
@@ -32,9 +31,7 @@ const Filters = {
         cat.replace(/\\/g, "\\\\").replace(/'/g, "\\'") +
         "')\">" +
         cat +
-        ' <span style="opacity:.5;font-size:11px;">(' +
-        count +
-        ")</span></button>";
+        "</button>";
     });
     el.innerHTML = html;
   },
@@ -49,22 +46,27 @@ const Filters = {
   },
 
   apply(allProducts) {
-    const q = Utils.normalize(
-      document.getElementById("searchInput")?.value?.trim() || "",
-    );
-    // Primeiro filtra por plataforma
+    // Filtro de plataforma
     let list = PlatformFilter.filter(allProducts);
-    // Depois por categoria
-    list = list.filter((p) => {
-      const matchCat =
-        this.catAtiva === "todas" || this.getCategoryLabel(p) === this.catAtiva;
-      const matchSearch =
-        !q ||
-        Utils.normalize(p.title).includes(q) ||
-        Utils.normalize(p.brand || "").includes(q) ||
-        Utils.normalize(p.category || "").includes(q);
-      return matchCat && matchSearch;
-    });
+    // Filtro de categoria
+    list = list.filter(
+      (p) =>
+        this.catAtiva === "todas" || this.getCategoryLabel(p) === this.catAtiva,
+    );
+    // Filtro de texto — só quando busca está ativa
+    if (Search.isActive()) {
+      const q = Utils.normalize(
+        document.getElementById("searchInput")?.value?.trim() || "",
+      );
+      if (q) {
+        list = list.filter(
+          (p) =>
+            Utils.normalize(p.title).includes(q) ||
+            Utils.normalize(p.brand || "").includes(q) ||
+            Utils.normalize(p.category || "").includes(q),
+        );
+      }
+    }
     return list;
   },
 };
