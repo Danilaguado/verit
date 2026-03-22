@@ -32,6 +32,7 @@ const CATS = [
 ];
 
 let allProducts = [];
+let modoAtivo = "categoria";
 
 const fmt = (n) =>
   "R$ " +
@@ -41,14 +42,29 @@ const fmt = (n) =>
   });
 
 function linkAfiliado(url) {
-  if (!url) return "#";
-  return url + (url.includes("?") ? "&" : "?") + AFILIADO;
+  if (!url || url.includes("undefined")) return null;
+  return url.includes(AFILIADO)
+    ? url
+    : url + (url.includes("?") ? "&" : "?") + AFILIADO;
 }
 
 function setStatus(msg, type) {
   const el = document.getElementById("status");
   el.textContent = msg;
   el.className = "status" + (type ? " " + type : "");
+}
+
+function setTab(tab) {
+  modoAtivo = tab;
+  document
+    .querySelectorAll(".tab-btn")
+    .forEach((b) => b.classList.remove("active"));
+  document
+    .querySelector("[onclick=\"setTab('" + tab + "')\"]")
+    .classList.add("active");
+  document.getElementById("catRow").style.display =
+    tab === "categoria" ? "" : "none";
+  if (tab === "relampago") carregarRelampago();
 }
 
 function loadCategories() {
@@ -89,17 +105,29 @@ function renderProducts() {
           ? p.thumbnail.replace("http://", "https://")
           : "";
         var disc = p.original_price && p.original_price > p.price;
-        var pct = disc ? Math.round((1 - p.price / p.original_price) * 100) : 0;
+        var pct =
+          p.discount ||
+          (disc
+            ? "-" + Math.round((1 - p.price / p.original_price) * 100) + "% OFF"
+            : "");
         var url = linkAfiliado(p.permalink);
+        var linkAttr = url
+          ? 'href="' + url + '" target="_blank" rel="noopener"'
+          : 'href="#"';
         return (
           '<div class="card">' +
-          '<a href="' +
-          url +
-          '" target="_blank" rel="noopener">' +
-          '<img class="card-img" src="' +
+          "<a " +
+          linkAttr +
+          '><img class="card-img" src="' +
           thumb +
           '" alt="" loading="lazy"/></a>' +
-          '<div class="card-body"><div class="card-title">' +
+          '<div class="card-body">' +
+          (p.brand
+            ? "<div style=\"font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px;\">" +
+              p.brand +
+              "</div>"
+            : "") +
+          '<div class="card-title">' +
           p.title +
           "</div>" +
           '<div class="card-prices">' +
@@ -109,16 +137,37 @@ function renderProducts() {
           '<div class="current">' +
           fmt(p.price) +
           "</div>" +
-          (disc ? '<span class="badge">-' + pct + "% OFF</span>" : "") +
+          (pct ? '<span class="badge">⚡ ' + pct + "</span>" : "") +
           "</div></div>" +
-          '<a class="card-link" href="' +
-          url +
-          '" target="_blank" rel="noopener">ver no mercado livre →</a>' +
+          '<a class="card-link" ' +
+          linkAttr +
+          ">ver no mercado livre →</a>" +
           "</div>"
         );
       })
       .join("") +
     "</div>";
+}
+
+function carregarRelampago() {
+  setStatus("Carregando ofertas relâmpago...", "loading");
+  document.getElementById("output").innerHTML =
+    '<div class="empty-state">Carregando...</div>';
+  document.getElementById("countBadge").textContent = "";
+
+  allProducts = (window.OFERTAS_RELAMPAGO || []).filter(
+    (p) =>
+      p.title && p.price && p.permalink && !p.permalink.includes("undefined"),
+  );
+
+  if (!allProducts.length) {
+    setStatus("Nenhuma oferta relâmpago disponível.", "error");
+    document.getElementById("output").innerHTML =
+      '<div class="empty-state"><div class="icon">⚡</div>Nenhuma oferta no momento.</div>';
+  } else {
+    setStatus(allProducts.length + " ofertas relâmpago carregadas.");
+    renderProducts();
+  }
 }
 
 async function buscarProdutos() {
@@ -139,7 +188,6 @@ async function buscarProdutos() {
     const res = await fetch(`${API_URL}?categoria=${catId}`);
     if (!res.ok) throw new Error("Erro HTTP " + res.status);
     const data = await res.json();
-
     if (data.error) {
       setStatus("Erro: " + data.error, "error");
       btn.disabled = false;
@@ -147,7 +195,6 @@ async function buscarProdutos() {
     }
 
     allProducts = data.results || [];
-
     if (!allProducts.length) {
       setStatus("Nenhum produto encontrado.", "error");
       document.getElementById("output").innerHTML =
@@ -163,16 +210,9 @@ async function buscarProdutos() {
       e.message +
       "</div>";
   }
-
   btn.disabled = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   loadCategories();
-  document
-    .getElementById("btnBuscar")
-    .addEventListener("click", buscarProdutos);
-  document
-    .getElementById("onlyDiscount")
-    .addEventListener("change", renderProducts);
 });
