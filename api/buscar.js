@@ -35,51 +35,55 @@ export default async function handler(request, response) {
   };
 
   try {
-    // 1. Tenta highlights da categoria
-    const highlightRes = await fetch(
-      `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
-      { headers },
-    );
+    // Coleta IDs de highlights da categoria principal + todas as subcategorias
+    // até ter 20 produtos
+    async function getHighlightIds(catId, limit = 20) {
+      const ids = new Set();
 
-    // Se highlights falhou ou não tem conteúdo, tenta subcategorias
-    let productIds = [];
-
-    if (highlightRes.ok) {
-      const highlightData = await highlightRes.json();
-      productIds = (highlightData.content || []).slice(0, 20).map((i) => i.id);
-    }
-
-    // Se a categoria não tem highlights, busca subcategorias e tenta nelas
-    if (!productIds.length) {
-      const catRes = await fetch(
-        `https://api.mercadolibre.com/categories/${targetCat}`,
+      // Tenta highlights da categoria principal
+      const res = await fetch(
+        `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
         { headers },
       );
-      const catData = await catRes.json();
-      const children = (catData.children_categories || []).slice(0, 5);
+      if (res.ok) {
+        const data = await res.json();
+        (data.content || []).forEach((i) => ids.add(i.id));
+      }
 
-      // Tenta highlights de cada subcategoria até achar produtos
-      for (const child of children) {
-        const subRes = await fetch(
-          `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
+      // Se ainda não tem 20, busca subcategorias
+      if (ids.size < limit) {
+        const catRes = await fetch(
+          `https://api.mercadolibre.com/categories/${catId}`,
           { headers },
         );
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          const ids = (subData.content || []).slice(0, 20).map((i) => i.id);
-          if (ids.length) {
-            productIds = ids;
-            break;
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          const children = catData.children_categories || [];
+
+          for (const child of children) {
+            if (ids.size >= limit) break;
+            const subRes = await fetch(
+              `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
+              { headers },
+            );
+            if (subRes.ok) {
+              const subData = await subRes.json();
+              (subData.content || []).forEach((i) => ids.add(i.id));
+            }
           }
         }
       }
+
+      return [...ids].slice(0, limit);
     }
+
+    const productIds = await getHighlightIds(targetCat, 20);
 
     if (!productIds.length) {
       return response.status(200).json({ results: [] });
     }
 
-    // 2. Busca detalhes + preço de cada produto
+    // Busca detalhes + preço de cada produto em paralelo
     const results = await Promise.all(
       productIds.map(async (pid) => {
         try {

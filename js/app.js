@@ -1,5 +1,6 @@
 const API_URL = "https://verit-orpin.vercel.app/api/buscar";
 
+// Categorias reais do Mercado Livre Brasil (MLB)
 const CATS = [
   { id: "MLB5672", name: "Acessórios para Veículos" },
   { id: "MLB1403", name: "Agro" },
@@ -11,8 +12,8 @@ const CATS = [
   { id: "MLB1246", name: "Calçados, Roupas e Bolsas" },
   { id: "MLB1039", name: "Câmeras e Acessórios" },
   { id: "MLB1051", name: "Carros, Motos e Outros" },
-  { id: "MLB1648", name: "Celulares e Telefones" },
   { id: "MLB1131", name: "Casa, Móveis e Decoração" },
+  { id: "MLB1648", name: "Celulares e Telefones" },
   { id: "MLB1574", name: "Construção" },
   { id: "MLB1144", name: "Eletrodomésticos" },
   { id: "MLB1000", name: "Eletrônicos, Áudio e Vídeo" },
@@ -22,7 +23,9 @@ const CATS = [
   { id: "MLB1196", name: "Joias e Relógios" },
   { id: "MLB1222", name: "Livros, Revistas e Comics" },
   { id: "MLB1499", name: "Música, Cinema e Séries" },
+  { id: "MLB1952", name: "Saúde e Beleza" },
   { id: "MLB1642", name: "Serviços" },
+  { id: "MLB1540", name: "Imóveis" },
 ];
 
 let allProducts = [];
@@ -122,6 +125,11 @@ async function buscarProdutos() {
 
   try {
     const res = await fetch(`${API_URL}?categoria=${catId}`);
+
+    if (!res.ok) {
+      throw new Error("Erro HTTP " + res.status);
+    }
+
     const data = await res.json();
 
     if (data.error) {
