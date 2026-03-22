@@ -22,119 +22,111 @@ export default async function handler(request, response) {
   }
 
   const ACCESS_TOKEN = process.env.ML_ACCESS_TOKEN;
-  if (!ACCESS_TOKEN) {
-    return response
-      .status(401)
-      .json({ error: "ML_ACCESS_TOKEN não configurado." });
-  }
+  const headers = { Accept: "application/json" };
+  if (ACCESS_TOKEN) headers["Authorization"] = `Bearer ${ACCESS_TOKEN}`;
 
-  const headers = {
-    Authorization: `Bearer ${ACCESS_TOKEN}`,
-    Accept: "application/json",
-  };
+  const targetCat = categoria || "MLB1144";
 
   try {
-    let productIds = [];
+    // Tenta search direto server-side (sem CORS, pode funcionar sem auth)
+    const searchUrl = tipo
+      ? buildOfertaUrl(tipo)
+      : `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=20&sort=relevance`;
 
-    // ── MODO OFERTAS ESPECIAIS (todas / relâmpago / preços imbatíveis) ──
-    if (tipo) {
-      const highlightTypes = {
-        todas: "https://api.mercadolibre.com/highlights/MLB",
-        relampago: "https://api.mercadolibre.com/highlights/MLB?type=LIGHTNING",
-        imbativeis:
-          "https://api.mercadolibre.com/highlights/MLB?type=BEST_PRICE",
-      };
-      const url = highlightTypes[tipo] || highlightTypes["todas"];
-      const res = await fetch(url, { headers });
-      const data = await res.json();
-      productIds = (data.content || []).slice(0, 20).map((i) => i.id);
+    const res = await fetch(searchUrl, { headers });
+    const data = await res.json();
 
-      // Se não tiver conteúdo na raiz, tenta o highlights geral
-      if (!productIds.length) {
-        const fallback = await fetch(
-          "https://api.mercadolibre.com/highlights/MLB",
-          { headers },
-        );
-        const fbData = await fallback.json();
-        productIds = (fbData.content || []).slice(0, 20).map((i) => i.id);
-      }
-
-      // ── MODO CATEGORIA ──
-    } else {
-      const targetCat = categoria || "MLB1144";
-
-      async function getHighlightIds(catId, limit = 20) {
-        const ids = new Set();
-        const res = await fetch(
-          `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
-          { headers },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          (data.content || []).forEach((i) => ids.add(i.id));
-        }
-        if (ids.size < limit) {
-          const catRes = await fetch(
-            `https://api.mercadolibre.com/categories/${catId}`,
-            { headers },
-          );
-          if (catRes.ok) {
-            const catData = await catRes.json();
-            for (const child of catData.children_categories || []) {
-              if (ids.size >= limit) break;
-              const subRes = await fetch(
-                `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
-                { headers },
-              );
-              if (subRes.ok) {
-                const subData = await subRes.json();
-                (subData.content || []).forEach((i) => ids.add(i.id));
-              }
-            }
-          }
-        }
-        return [...ids].slice(0, limit);
-      }
-
-      productIds = await getHighlightIds(targetCat, 20);
+    // Se search funcionou, retorna direto
+    if (res.ok && data.results && data.results.length > 0) {
+      return response.status(200).json({
+        results: data.results.map((p) => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          original_price: p.original_price,
+          thumbnail: p.thumbnail,
+          permalink: p.permalink,
+        })),
+      });
     }
 
-    if (!productIds.length) {
-      return response.status(200).json({ results: [] });
-    }
-
-    // Busca detalhes + preço de cada produto
-    const results = await Promise.all(
-      productIds.map(async (pid) => {
-        try {
-          const [prodRes, itemsRes] = await Promise.all([
-            fetch(`https://api.mercadolibre.com/products/${pid}`, {
-              headers,
-            }).then((r) => r.json()),
-            fetch(
-              `https://api.mercadolibre.com/products/${pid}/items?limit=1`,
-              { headers },
-            ).then((r) => r.json()),
-          ]);
-          const item = itemsRes?.results?.[0] ?? null;
-          return {
-            id: pid,
-            title: prodRes.name || prodRes.title || "",
-            price: item?.price ?? null,
-            original_price: item?.original_price ?? null,
-            thumbnail: prodRes.pictures?.[0]?.url ?? null,
-            permalink: `https://www.mercadolivre.com.br/p/${pid}`,
-          };
-        } catch {
-          return null;
-        }
-      }),
-    );
-
-    return response.status(200).json({
-      results: results.filter((p) => p && p.title && p.price !== null),
-    });
+    // Fallback: highlights por categoria
+    const results = await getHighlights(targetCat, headers);
+    return response.status(200).json({ results });
   } catch (error) {
     return response.status(500).json({ error: error.message });
   }
+}
+
+function buildOfertaUrl(tipo) {
+  const base =
+    "https://api.mercadolibre.com/sites/MLB/search?limit=20&sort=relevance";
+  if (tipo === "relampago") return base + "&promotion_type=lightning";
+  if (tipo === "imbativeis") return base + "&promotion_type=deal_of_the_day";
+  return base + "&discount=10-100"; // todas as ofertas
+}
+
+async function getHighlights(catId, headers) {
+  const ids = new Set();
+
+  const res = await fetch(
+    `https://api.mercadolibre.com/highlights/MLB/category/${catId}`,
+    { headers },
+  );
+  if (res.ok) {
+    const data = await res.json();
+    (data.content || []).forEach((i) => ids.add(i.id));
+  }
+
+  if (ids.size < 20) {
+    const catRes = await fetch(
+      `https://api.mercadolibre.com/categories/${catId}`,
+      { headers },
+    );
+    if (catRes.ok) {
+      const catData = await catRes.json();
+      for (const child of catData.children_categories || []) {
+        if (ids.size >= 20) break;
+        const subRes = await fetch(
+          `https://api.mercadolibre.com/highlights/MLB/category/${child.id}`,
+          { headers },
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          (subData.content || []).forEach((i) => ids.add(i.id));
+        }
+      }
+    }
+  }
+
+  const productIds = [...ids].slice(0, 20);
+  if (!productIds.length) return [];
+
+  const results = await Promise.all(
+    productIds.map(async (pid) => {
+      try {
+        const [prodRes, itemsRes] = await Promise.all([
+          fetch(`https://api.mercadolibre.com/products/${pid}`, {
+            headers,
+          }).then((r) => r.json()),
+          fetch(`https://api.mercadolibre.com/products/${pid}/items?limit=1`, {
+            headers,
+          }).then((r) => r.json()),
+        ]);
+        const item = itemsRes?.results?.[0] ?? null;
+        return {
+          id: pid,
+          title: prodRes.name || prodRes.title || "",
+          price: item?.price ?? null,
+          original_price: item?.original_price ?? null,
+          thumbnail: prodRes.pictures?.[0]?.url ?? null,
+          permalink: `https://www.mercadolivre.com.br/p/${pid}`,
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return results.filter((p) => p && p.title && p.price !== null);
 }
