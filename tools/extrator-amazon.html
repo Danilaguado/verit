@@ -21,21 +21,22 @@
         color: #aaa;
         font-size: 13px;
         margin-bottom: 1.5rem;
-        line-height: 1.6;
+        line-height: 1.8;
       }
       b {
         color: #ff9900;
       }
       textarea {
         width: 100%;
-        height: 200px;
+        height: 220px;
         background: #111;
         color: #0f0;
-        border: 1px solid #333;
+        border: 1px solid #444;
         padding: 12px;
         font-size: 12px;
         border-radius: 8px;
         resize: vertical;
+        box-sizing: border-box;
       }
       .btn {
         background: #ff9900;
@@ -66,142 +67,176 @@
         background: #ff9900;
         color: #000;
       }
-      .result {
+      .box {
         margin-top: 1.5rem;
         background: #111;
         border: 1px solid #333;
         border-radius: 8px;
-        padding: 12px;
-        display: none;
-      }
-      .result h2 {
-        color: #ff9900;
-        font-size: 14px;
-        margin-bottom: 8px;
-      }
-      .log {
-        font-size: 12px;
-        color: #0f0;
-        white-space: pre-wrap;
-        max-height: 250px;
-        overflow-y: auto;
+        padding: 16px;
       }
       .stats {
         display: flex;
-        gap: 16px;
+        gap: 12px;
         margin-bottom: 12px;
         flex-wrap: wrap;
       }
       .stat {
         background: #232f3e;
-        padding: 8px 16px;
+        padding: 6px 14px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 12px;
         color: #ff9900;
+      }
+      .log {
+        font-size: 12px;
+        color: #aaa;
+        margin-bottom: 8px;
+      }
+      .preview {
+        font-size: 11px;
+        color: #0f0;
+        white-space: pre-wrap;
+        max-height: 250px;
+        overflow-y: auto;
+        background: #0a0a0a;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 12px;
       }
     </style>
   </head>
   <body>
     <h1>🛒 Extrator de Ofertas Amazon</h1>
     <p>
-      1. Abre o DevTools (F12) na página de ofertas da Amazon<br />
-      2. Aba <b>Network</b> → filtra por <b>promotio</b><br />
-      3. Clica em qualquer requisição <b>promotions?pageSize=30</b><br />
-      4. Aba <b>Resposta</b> → botão direito → <b>Copiar resposta</b><br />
-      5. Cola aqui e clica em <b>Extrair</b><br />
-      6. Repete para cada página e clica em <b>Baixar JS</b>
+      1. Aba <b>Network</b> no DevTools → filtra por <b>promotio</b><br />
+      2. Clica em <b>promotions?pageSize=30</b> → aba <b>Resposta</b><br />
+      3. Botão direito → <b>Copiar resposta</b><br />
+      4. Cola abaixo e clica <b>Extrair</b> — repete para cada página<br />
+      5. Clica <b>Copiar JS</b> e cola direto no <b>ofertas-amazon.js</b>
     </p>
 
     <textarea
-      id="jsonInput"
-      placeholder="Cole aqui o JSON copiado da aba Resposta..."
+      id="input"
+      placeholder="Cole aqui o JSON da aba Resposta..."
     ></textarea>
     <br />
-    <button class="btn" onclick="extrair()">⚡ Extrair Produtos</button>
-    <button class="btn-sec" onclick="limpar()">🗑 Limpar tudo</button>
+    <button class="btn" onclick="extrair()">⚡ Extrair</button>
+    <button class="btn-sec" onclick="limpar()">🗑 Limpar</button>
 
-    <div class="result" id="result">
-      <h2>📦 Resultado</h2>
+    <div class="box" id="box" style="display: none">
       <div class="stats">
-        <div class="stat" id="statTotal">Total: 0</div>
-        <div class="stat" id="statComDesc">Com desconto: 0</div>
-        <div class="stat" id="statComExp">Com expiração: 0</div>
+        <div class="stat" id="s1">Total: 0</div>
+        <div class="stat" id="s2">Com desconto: 0</div>
+        <div class="stat" id="s3">Com countdown: 0</div>
+        <div class="stat" id="s4">Com categoria: 0</div>
       </div>
       <div class="log" id="log"></div>
-      <br />
-      <button class="btn" onclick="baixar()">⬇ Baixar ofertas-amazon.js</button>
-      <button class="btn-sec" onclick="copiarJSON()">📋 Copiar JSON</button>
+      <div class="preview" id="preview"></div>
+      <button class="btn" onclick="baixar()">⬇ Baixar .js</button>
+      <button class="btn-sec" onclick="copiar()">📋 Copiar JS</button>
     </div>
 
     <script>
       var todos = [];
 
-      function log(msg) {
-        var el = document.getElementById("log");
-        el.textContent += msg + "\n";
-        el.scrollTop = el.scrollHeight;
-      }
-
-      function updateStats() {
-        document.getElementById("statTotal").textContent =
-          "Total: " + todos.length;
-        document.getElementById("statComDesc").textContent =
-          "Com desconto: " + todos.filter((p) => p.discount).length;
-        document.getElementById("statComExp").textContent =
-          "Com expiração: " + todos.filter((p) => p.expires_at).length;
+      function stats() {
+        document.getElementById("s1").textContent = "Total: " + todos.length;
+        document.getElementById("s2").textContent =
+          "Com desconto: " +
+          todos.filter(function (p) {
+            return p.discount;
+          }).length;
+        document.getElementById("s3").textContent =
+          "Com countdown: " +
+          todos.filter(function (p) {
+            return p.expires_at;
+          }).length;
+        document.getElementById("s4").textContent =
+          "Com categoria: " +
+          todos.filter(function (p) {
+            return p.category;
+          }).length;
       }
 
       function extrair() {
-        var input = document.getElementById("jsonInput").value.trim();
-        if (!input) {
+        var raw = document.getElementById("input").value.trim();
+        if (!raw) {
           alert("Cole o JSON primeiro!");
           return;
         }
+        var d;
         try {
-          var d = JSON.parse(input);
-          var promos = d?.entity?.rankedPromotions || [];
-          if (!promos.length) {
-            log("❌ Nenhuma promoção encontrada.");
-            return;
-          }
+          d = JSON.parse(raw);
+        } catch (e) {
+          alert("JSON inválido: " + e.message);
+          return;
+        }
+        var promos;
+        try {
+          promos = d.entity.rankedPromotions;
+        } catch (e) {
+          alert("Estrutura não reconhecida.");
+          return;
+        }
 
-          var novos = 0;
-          promos.forEach(function (p) {
-            var prod = p.product?.entity;
-            if (!prod) return;
-            var asin = prod.asin;
-            var title = prod.title?.entity?.displayString ?? "";
-            var linkPath = prod.links?.entity?.viewOnAmazon?.url ?? "";
-            var permalink = "https://www.amazon.com.br" + linkPath;
-            var pe = prod.buyingOptions?.[0]?.price?.entity;
-            var price = parseFloat(
-              pe?.priceToPay?.moneyValueOrRange?.value?.amount ?? 0,
-            );
-            var original = parseFloat(
-              pe?.basisPrice?.moneyValueOrRange?.value?.amount ?? 0,
-            );
-            var discount = pe?.savings?.percentage?.displayString ?? null;
-            var images = prod.productImages?.entity?.images ?? [];
-            var pid =
-              images[0]?.lowRes?.physicalId ??
-              images[0]?.hiRes?.physicalId ??
-              null;
-            var thumbnail = pid
-              ? "https://m.media-amazon.com/images/I/" + pid + "._SL500_.jpg"
-              : null;
-            // Expiração via dealDetails
-            var dealDetails =
-              prod.buyingOptions?.[0]?.dealDetails?.entity ?? {};
-            var expires_at = dealDetails.endTime ?? null;
-            var starts_at = dealDetails.startTime ?? null;
-
-            if (!title || !price) return;
+        var novos = 0;
+        for (var i = 0; i < promos.length; i++) {
+          try {
+            var promo = promos[i];
+            var prod = promo.product.entity;
+            var asin = prod.asin || "";
             if (
+              !asin ||
               todos.find(function (x) {
                 return x.id === asin;
               })
             )
-              return;
+              continue;
+
+            var title = prod.title.entity.displayString || "";
+            var linkPath = prod.links.entity.viewOnAmazon.url || "";
+            var permalink = "https://www.amazon.com.br" + linkPath;
+
+            var buying = prod.buyingOptions[0];
+            var pe = buying.price.entity;
+            var price = parseFloat(
+              pe.priceToPay.moneyValueOrRange.value.amount || 0,
+            );
+            var original = parseFloat(
+              (pe.basisPrice &&
+                pe.basisPrice.moneyValueOrRange &&
+                pe.basisPrice.moneyValueOrRange.value &&
+                pe.basisPrice.moneyValueOrRange.value.amount) ||
+                0,
+            );
+            var discount =
+              (pe.savings &&
+                pe.savings.percentage &&
+                pe.savings.percentage.displayString) ||
+              null;
+
+            var images = prod.productImages.entity.images;
+            var pid =
+              (images[0].lowRes && images[0].lowRes.physicalId) ||
+              (images[0].hiRes && images[0].hiRes.physicalId) ||
+              null;
+            var thumbnail = pid
+              ? "https://m.media-amazon.com/images/I/" + pid + "._SL500_.jpg"
+              : null;
+
+            var deal = (buying.dealDetails && buying.dealDetails.entity) || {};
+            var expires_at = deal.endTime || null;
+            var starts_at = deal.startTime || null;
+
+            var catEntity =
+              (prod.productCategory && prod.productCategory.entity) || {};
+            var category =
+              (catEntity.websiteDisplayGroup &&
+                catEntity.websiteDisplayGroup.displayString) ||
+              null;
+
+            if (!title || !price) continue;
+
             todos.push({
               id: asin,
               title: title,
@@ -212,45 +247,82 @@
               starts_at: starts_at,
               thumbnail: thumbnail,
               permalink: permalink,
+              category: category,
               platform: "amazon",
             });
             novos++;
-          });
-
-          document.getElementById("result").style.display = "block";
-          updateStats();
-          log("✅ +" + novos + " novos | Total: " + todos.length + " produtos");
-          document.getElementById("jsonInput").value = "";
-        } catch (e) {
-          log("❌ Erro: " + e.message);
+          } catch (e) {}
         }
+
+        document.getElementById("box").style.display = "block";
+        stats();
+        document.getElementById("log").textContent =
+          "✅ +" + novos + " novos | Total: " + todos.length;
+        document.getElementById("preview").textContent = JSON.stringify(
+          todos.slice(-Math.min(novos, 2)),
+          null,
+          2,
+        );
+        document.getElementById("input").value = "";
       }
 
       function limpar() {
         todos = [];
         document.getElementById("log").textContent = "";
-        document.getElementById("result").style.display = "none";
-        document.getElementById("jsonInput").value = "";
+        document.getElementById("preview").textContent = "";
+        document.getElementById("box").style.display = "none";
+        document.getElementById("input").value = "";
       }
 
-      function baixar() {
-        var content =
+      function getContent() {
+        var limpo = todos.map(function (p) {
+          return {
+            id: p.id,
+            title: p.title,
+            price: p.price,
+            original_price: p.original_price,
+            discount: p.discount,
+            expires_at: p.expires_at,
+            starts_at: p.starts_at,
+            thumbnail: p.thumbnail,
+            permalink: p.permalink,
+            category: p.category,
+            platform: p.platform,
+          };
+        });
+        return (
           "// Amazon Ofertas\n// Gerado em " +
           new Date().toLocaleDateString("pt-BR") +
           "\nvar OFERTAS_AMAZON = " +
-          JSON.stringify(todos, null, 2) +
-          ";\n";
-        var blob = new Blob([content], { type: "text/javascript" });
+          JSON.stringify(limpo, null, 2) +
+          ";\n"
+        );
+      }
+
+      function baixar() {
+        var blob = new Blob([getContent()], { type: "text/javascript" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "ofertas-amazon.js";
         a.click();
-        log("📥 Baixado: ofertas-amazon.js (" + todos.length + " produtos)");
+        document.getElementById("log").textContent =
+          "📥 Baixado com " + todos.length + " produtos";
       }
 
-      function copiarJSON() {
-        navigator.clipboard.writeText(JSON.stringify(todos, null, 2));
-        log("📋 JSON copiado!");
+      function copiar() {
+        var ta = document.createElement("textarea");
+        ta.value = getContent();
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        document.getElementById("log").textContent =
+          "📋 Copiado! Cole no ofertas-amazon.js (" +
+          todos.length +
+          " produtos)";
       }
     </script>
   </body>

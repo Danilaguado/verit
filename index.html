@@ -10,44 +10,59 @@
     />
     <link rel="stylesheet" href="./css/style.css" />
     <style>
-      .tabs {
+      header {
         display: flex;
-        gap: 8px;
-        margin-bottom: 1.5rem;
+        align-items: center;
+      }
+      .search-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 1rem;
+        align-items: center;
         flex-wrap: wrap;
       }
-      .tab-btn {
+      .search-row input {
+        flex: 1;
+        min-width: 200px;
         font-family: "DM Sans", sans-serif;
-        font-size: 13px;
+        font-size: 14px;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        outline: none;
+      }
+      .search-row input:focus {
+        border-color: var(--text);
+      }
+      .cat-filters {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+      }
+      .cat-btn {
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
         font-weight: 500;
-        padding: 8px 18px;
+        padding: 5px 14px;
         border: 1px solid var(--border);
         border-radius: 20px;
         background: var(--surface);
         color: var(--muted);
         cursor: pointer;
         transition: all 0.15s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        white-space: nowrap;
       }
-      .tab-btn:hover {
+      .cat-btn:hover {
         border-color: var(--text);
         color: var(--text);
       }
-      .tab-btn.active {
+      .cat-btn.active {
         background: var(--text);
         color: var(--accent);
         border-color: var(--text);
-      }
-      .tab-btn.shopee.active {
-        background: #ee4d2d;
-        border-color: #ee4d2d;
-        color: #fff;
-      }
-      header {
-        display: flex;
-        align-items: center;
       }
       .platform-badge {
         display: inline-block;
@@ -55,7 +70,6 @@
         font-family: "DM Mono", monospace;
         padding: 2px 6px;
         border-radius: 4px;
-        margin-bottom: 4px;
         font-weight: 500;
       }
       .platform-ml {
@@ -70,10 +84,37 @@
         background: #ff9900;
         color: #000;
       }
-      .rating {
-        font-size: 11px;
-        color: var(--muted);
+      .pagination {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+        padding-bottom: 2rem;
+      }
+      .page-btn {
         font-family: "DM Mono", monospace;
+        font-size: 13px;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .page-btn:hover {
+        background: var(--bg);
+        border-color: var(--text);
+      }
+      .page-btn.active {
+        background: var(--text);
+        color: var(--accent);
+        border-color: var(--text);
+      }
+      .page-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
       }
     </style>
   </head>
@@ -97,47 +138,23 @@
         >🛒 Extrator Amazon</a
       >
     </header>
+
     <div class="main">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="setTab('ml-categoria')">
-          📂 ML Categorias
-        </button>
-        <button class="tab-btn" onclick="setTab('ml-relampago')">
-          ⚡ ML Relâmpago
-        </button>
-        <button class="tab-btn shopee" onclick="setTab('shopee-relampago')">
-          🛍 Shopee Flash
-        </button>
-        <button class="tab-btn amazon" onclick="setTab('amazon-ofertas')">
-          🛒 Amazon Ofertas
-        </button>
+      <!-- Barra de busca -->
+      <div class="search-row">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="🔍 Buscar entre todas as ofertas..."
+        />
       </div>
 
-      <div id="catRow">
-        <div class="config-card">
-          <h2>Categoria — Mercado Livre</h2>
-          <div class="fields-row">
-            <div class="field">
-              <label>Categoria</label>
-              <select id="categorySelect">
-                <option value="">Selecione uma categoria...</option>
-              </select>
-            </div>
-            <button class="btn" id="btnBuscar" onclick="buscarProdutos()">
-              Buscar →
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Filtros de categoria dinâmicos -->
+      <div class="cat-filters" id="catFilters"></div>
 
       <div class="filter-bar">
         <label class="toggle-label">
-          <input
-            type="checkbox"
-            id="onlyDiscount"
-            checked
-            onchange="renderProducts()"
-          />
+          <input type="checkbox" id="onlyDiscount" checked />
           Somente com desconto
         </label>
         <span class="count" id="countBadge"></span>
@@ -146,10 +163,11 @@
       <div class="status" id="status"></div>
       <div id="output">
         <div class="empty-state">
-          <div class="icon">🛍</div>
-          Selecione uma aba para começar.
+          <div class="icon">⚡</div>
+          Carregando ofertas...
         </div>
       </div>
+      <div class="pagination" id="pagination"></div>
     </div>
 
     <script src="./js/ofertas-ml.js"></script>
