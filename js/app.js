@@ -2,9 +2,10 @@
 // APP: PONTO DE ENTRADA
 // ═══════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function () {
-  Hero.show();
+  // ── Placeholder animado no buscador ──
+  SearchPlaceholder.init();
 
-  // Banners
+  // ── Banners ──
   const bf = document.getElementById("bannerFixo");
   const bfImg = document.getElementById("bannerFixoImg");
   if (Resources.bannerFixo?.src) {
@@ -25,10 +26,11 @@ document.addEventListener("DOMContentLoaded", function () {
     bs.style.display = "none";
   }
 
+  // ── Carrossel e produtos ──
   Carousel.init();
   Products.load();
 
-  // PWA
+  // ── PWA instalação ──
   let deferredPrompt = null;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();

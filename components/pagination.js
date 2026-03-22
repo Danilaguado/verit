@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// COMPONENTE: PAGINAÇÃO — com loader ao trocar página
+// COMPONENTE: PAGINAÇÃO
 // ═══════════════════════════════════════════════════
 const Pagination = {
   POR_PAGINA: 50,
@@ -42,12 +42,14 @@ const Pagination = {
   },
 
   goPage(n) {
-    // Scroll imediato para o topo dos produtos
+    // Scroll até o início dos produtos — não o topo da página
     const anchor = document.getElementById("produtosScroll");
-    if (anchor) anchor.scrollIntoView({ block: "start" });
-    window.scrollTo({ top: 0 });
+    if (anchor) {
+      const top = anchor.getBoundingClientRect().top + window.scrollY - 8;
+      window.scrollTo({ top, behavior: "instant" });
+    }
 
-    // Loader de transição (800ms)
+    // Loader 800ms por cima enquanto troca os cards
     const loader = document.getElementById("loader");
     loader.style.display = "flex";
     requestAnimationFrame(() =>

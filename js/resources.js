@@ -2,51 +2,60 @@
 // RESOURCES — Edite aqui todas as imagens, vídeos e links
 // ═══════════════════════════════════════════════════
 const Resources = {
-  // ── HERO (apresentação ao abrir o app) ──────────
-  // Coloque aqui o caminho para seu vídeo ou GIF de intro
-  hero: {
-    type: "gif", // "gif" ou "video"
-    src: "./assets/hero.gif", // substitua pelo seu arquivo
-    // src: "./assets/hero.mp4", // se for vídeo
-  },
-
-  // ── FAVICON ─────────────────────────────────────
+  // ── FAVICON / LOGO DO SITE ───────────────────────
+  // Coloque seu arquivo em assets/favicon.png
   favicon: "./assets/favicon.png",
 
-  // ── CARROSSEL DE BANNERS (3 imagens) ────────────
+  // ── HERO / SPLASH SCREEN ─────────────────────────
+  // O PWA já usa o favicon como splash nativo ao instalar.
+  // Se quiser uma splash customizada DENTRO do browser
+  // (antes do app carregar), ative aqui:
+  //
+  // hero: {
+  //   enabled: true,
+  //   type: "gif",           // "gif" | "video" | "logo"
+  //   src:  "./assets/hero.gif",
+  // },
+  //
+  // Por padrão desativado para não duplicar com o ícone PWA:
+  hero: { enabled: false },
+
+  // ── CARROSSEL DE BANNERS ────────────────────────
   banners: [
     { src: "./assets/banner1.jpg", alt: "Oferta 1", link: "#" },
     { src: "./assets/banner2.jpg", alt: "Oferta 2", link: "#" },
     { src: "./assets/banner3.jpg", alt: "Oferta 3", link: "#" },
   ],
 
-  // ── BANNER FIXO (abaixo dos ícones) ─────────────
+  // ── BANNER FIXO ─────────────────────────────────
   bannerFixo: {
     src: "./assets/banner-fixo.jpg",
     alt: "Promoção especial",
     link: "#",
   },
 
-  // ── BANNER SMARTPHONE (fixo na parte inferior) ──
+  // ── BANNER SMARTPHONE ───────────────────────────
   bannerSmartphone: {
     src: "./assets/banner-smartphone.jpg",
     alt: "Smartphones em oferta",
     link: "#",
   },
 
-  // ── ÍCONES DE CATEGORIAS RÁPIDAS ────────────────
-  quickLinks: [
-    { icon: "🏷️", label: "Ofertas", link: "#ofertas" },
-    { icon: "🎟️", label: "Cupons", link: "#cupons" },
-    {
-      icon: "💬",
-      label: "WhatsApp",
-      link: "https://chat.whatsapp.com/SEU_LINK_AQUI",
-      highlight: true, // borda iluminada
-    },
-    { icon: "🛒", label: "ML · Shopee · Amazon", link: "#plataformas" },
-  ],
-
-  // ── LINK GRUPO WHATSAPP ─────────────────────────
+  // ── WHATSAPP ─────────────────────────────────────
   whatsappGroup: "https://chat.whatsapp.com/SEU_LINK_AQUI",
+
+  // ── PLACEHOLDER DO BUSCADOR (rotativo) ───────────
+  // Coloque nomes de produtos que aparecerão animados
+  searchPlaceholders: [
+    "Tênis Kappa",
+    "Whey Protein",
+    "Air Fryer",
+    "Fone Bluetooth",
+    "Smartwatch",
+    "Cafeteira",
+    "Kit Camisetas",
+    "Mochila",
+    "Projetor 4K",
+    "Panela de Pressão",
+  ],
 };
