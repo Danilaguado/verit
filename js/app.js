@@ -33,6 +33,7 @@ const CATS = [
 
 let allProducts = [];
 let modoAtivo = "categoria";
+let countdownInterval = null;
 
 const fmt = (n) =>
   "R$ " +
@@ -65,6 +66,7 @@ function setTab(tab) {
   document.getElementById("catRow").style.display =
     tab === "categoria" ? "" : "none";
   if (tab === "relampago") carregarRelampago();
+  else stopCountdowns();
 }
 
 function loadCategories() {
@@ -76,6 +78,46 @@ function loadCategories() {
     sel.appendChild(o);
   });
 }
+
+// ── COUNTDOWN ──────────────────────────────────────────────
+function stopCountdowns() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
+
+function formatCountdown(expiresAt) {
+  if (!expiresAt) return null;
+  const diff = new Date(expiresAt) - new Date();
+  if (diff <= 0) return "Encerrada";
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return (
+    (h > 0 ? h + "h " : "") +
+    String(m).padStart(2, "0") +
+    "m " +
+    String(s).padStart(2, "0") +
+    "s"
+  );
+}
+
+function startCountdowns() {
+  stopCountdowns();
+  countdownInterval = setInterval(() => {
+    document.querySelectorAll(".countdown-timer").forEach((el) => {
+      const expires = el.dataset.expires;
+      const txt = formatCountdown(expires);
+      el.textContent = txt || "";
+      if (txt === "Encerrada") {
+        el.style.color = "var(--red)";
+        el.closest(".card").style.opacity = "0.5";
+      }
+    });
+  }, 1000);
+}
+// ───────────────────────────────────────────────────────────
 
 function renderProducts() {
   const only = document.getElementById("onlyDiscount").checked;
@@ -114,6 +156,16 @@ function renderProducts() {
         var linkAttr = url
           ? 'href="' + url + '" target="_blank" rel="noopener"'
           : 'href="#"';
+        var countdown = p.expires_at
+          ? '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">' +
+            "<span style=\"font-size:10px;background:#FFF1CB;color:#000;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:500;\">⚡ RELÂMPAGO</span>" +
+            '<span class="countdown-timer" data-expires="' +
+            p.expires_at +
+            '" style="font-size:11px;font-family:\'DM Mono\',monospace;color:var(--red);font-weight:500;">' +
+            (formatCountdown(p.expires_at) || "") +
+            "</span>" +
+            "</div>"
+          : "";
         return (
           '<div class="card">' +
           "<a " +
@@ -122,6 +174,7 @@ function renderProducts() {
           thumb +
           '" alt="" loading="lazy"/></a>' +
           '<div class="card-body">' +
+          countdown +
           (p.brand
             ? "<div style=\"font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px;\">" +
               p.brand +
@@ -147,9 +200,12 @@ function renderProducts() {
       })
       .join("") +
     "</div>";
+
+  if (modoAtivo === "relampago") startCountdowns();
 }
 
 function carregarRelampago() {
+  stopCountdowns();
   setStatus("Carregando ofertas relâmpago...", "loading");
   document.getElementById("output").innerHTML =
     '<div class="empty-state">Carregando...</div>';
@@ -165,7 +221,21 @@ function carregarRelampago() {
     document.getElementById("output").innerHTML =
       '<div class="empty-state"><div class="icon">⚡</div>Nenhuma oferta no momento.</div>';
   } else {
-    setStatus(allProducts.length + " ofertas relâmpago carregadas.");
+    // Pega o horário de expiração do primeiro produto com expires_at
+    const primeiro = allProducts.find((p) => p.expires_at);
+    if (primeiro) {
+      const expira = new Date(primeiro.expires_at);
+      setStatus(
+        allProducts.length +
+          " ofertas relâmpago — encerram às " +
+          expira.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+      );
+    } else {
+      setStatus(allProducts.length + " ofertas relâmpago carregadas.");
+    }
     renderProducts();
   }
 }
@@ -193,7 +263,6 @@ async function buscarProdutos() {
       btn.disabled = false;
       return;
     }
-
     allProducts = data.results || [];
     if (!allProducts.length) {
       setStatus("Nenhum produto encontrado.", "error");
