@@ -163,10 +163,9 @@ function renderPage() {
 function goPage(n) {
   paginaAtual = n;
   renderPage();
-  // Scroll suave só até o topo da área de produtos, não da página toda
-  const area = document.getElementById("produtos-area");
-  const top = area.getBoundingClientRect().top + window.scrollY - 80;
-  window.scrollTo({ top: top, behavior: "smooth" });
+  // Volta ao topo do scroll interno sem mover a página
+  const scroll = document.getElementById("produtosScroll");
+  if (scroll) scroll.scrollTop = 0;
 }
 
 function renderPagination(pages) {
