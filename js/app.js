@@ -44,9 +44,17 @@ const fmt = (n) =>
 
 function linkAfiliado(url) {
   if (!url || url.includes("undefined")) return null;
-  return url.includes(AFILIADO)
-    ? url
-    : url + (url.includes("?") ? "&" : "?") + AFILIADO;
+  let finalUrl = url;
+  // Corrige domínio para itens diretos MLB-XXXXXXX
+  if (url.match(/www\.mercadolivre\.com\.br\/MLB-/)) {
+    finalUrl = url.replace(
+      "www.mercadolivre.com.br/MLB-",
+      "produto.mercadolivre.com.br/MLB-",
+    );
+  }
+  return finalUrl.includes(AFILIADO)
+    ? finalUrl
+    : finalUrl + (finalUrl.includes("?") ? "&" : "?") + AFILIADO;
 }
 
 function setStatus(msg, type) {
@@ -107,8 +115,7 @@ function startCountdowns() {
   stopCountdowns();
   countdownInterval = setInterval(() => {
     document.querySelectorAll(".countdown-timer").forEach((el) => {
-      const expires = el.dataset.expires;
-      const txt = formatCountdown(expires);
+      const txt = formatCountdown(el.dataset.expires);
       el.textContent = txt || "";
       if (txt === "Encerrada") {
         el.style.color = "var(--red)";
@@ -157,7 +164,7 @@ function renderProducts() {
           ? 'href="' + url + '" target="_blank" rel="noopener"'
           : 'href="#"';
         var countdown = p.expires_at
-          ? '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">' +
+          ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
             "<span style=\"font-size:10px;background:#FFF1CB;color:#000;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:500;\">⚡ RELÂMPAGO</span>" +
             '<span class="countdown-timer" data-expires="' +
             p.expires_at +
@@ -221,7 +228,6 @@ function carregarRelampago() {
     document.getElementById("output").innerHTML =
       '<div class="empty-state"><div class="icon">⚡</div>Nenhuma oferta no momento.</div>';
   } else {
-    // Pega o horário de expiração do primeiro produto com expires_at
     const primeiro = allProducts.find((p) => p.expires_at);
     if (primeiro) {
       const expira = new Date(primeiro.expires_at);
