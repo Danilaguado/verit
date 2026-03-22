@@ -6,7 +6,6 @@ export default async function handler(request, response) {
     process.env.CLIENT_SECRET || "Fwm0jA6sQPX8AflQlFYRJ3xSGtjJ9Hzh";
   const REDIRECT_URI = "https://verit-orpin.vercel.app/";
 
-  // Rota de troca: /api/buscar?code=TG-...
   if (code) {
     const tokenRes = await fetch("https://api.mercadolibre.com/oauth/token", {
       method: "POST",
@@ -31,47 +30,36 @@ export default async function handler(request, response) {
   }
 
   const targetCat = categoria || "MLB1144";
-
-  // Testa 3 endpoints diferentes para achar um que funcione
-  const endpoints = [
-    // 1. Search padrão com filtro de desconto
-    `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=20&sort=relevance&discount=10-100`,
-    // 2. Search sem filtro
-    `https://api.mercadolibre.com/sites/MLB/search?category=${targetCat}&limit=20`,
-    // 3. Highlights (produtos em destaque)
-    `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
-  ];
-
   const headers = {
     Authorization: `Bearer ${ACCESS_TOKEN}`,
     Accept: "application/json",
   };
 
-  const results = [];
+  try {
+    // 1. Pega os IDs dos produtos em destaque da categoria
+    const highlightRes = await fetch(
+      `https://api.mercadolibre.com/highlights/MLB/category/${targetCat}`,
+      { headers },
+    );
+    const highlightData = await highlightRes.json();
+    const ids = (highlightData.content || []).slice(0, 20).map((i) => i.id);
 
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, { headers });
-      const data = await res.json();
-      results.push({
-        url,
-        status: res.status,
-        error: data.error || data.message || null,
-        total: data.paging?.total ?? (Array.isArray(data) ? data.length : null),
-        sample: JSON.stringify(data).substring(0, 200),
-      });
-      // Se funcionou, retorna os dados reais
-      if (res.status === 200 && (data.results?.length || Array.isArray(data))) {
-        return response.status(200).json(data);
-      }
-    } catch (e) {
-      results.push({ url, error: e.message });
+    if (!ids.length) {
+      return response.status(200).json({ results: [] });
     }
-  }
 
-  // Se todos falharam, retorna o diagnóstico
-  return response.status(403).json({
-    error: "Todos os endpoints retornaram erro. Veja o diagnóstico abaixo.",
-    diagnostico: results,
-  });
+    // 2. Busca detalhes de todos os IDs de uma vez (endpoint multiget)
+    const itemsRes = await fetch(
+      `https://api.mercadolibre.com/items?ids=${ids.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink,condition`,
+      { headers },
+    );
+    const itemsData = await itemsRes.json();
+
+    // itemsData é um array de { code, body } — extrai só os que vieram OK
+    const results = itemsData.filter((i) => i.code === 200).map((i) => i.body);
+
+    return response.status(200).json({ results });
+  } catch (error) {
+    return response.status(500).json({ error: error.message });
+  }
 }
