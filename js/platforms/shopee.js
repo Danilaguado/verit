@@ -1,10 +1,16 @@
 // ═══════════════════════════════════════════════════
-// APP: PONTO DE ENTRADA
+// PLATAFORMA: SHOPEE
 // ═══════════════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", function () {
-  Products.load();
-  document.getElementById("searchInput").addEventListener("input", function () {
-    State.paginaAtual = 1;
-    Products.applyFilters();
-  });
-});
+const Shopee = {
+  getUrl(permalink) {
+    return permalink || null;
+  },
+
+  badge() {
+    return '<span class="platform-badge platform-shopee">🛍 Shopee</span>';
+  },
+
+  icon() {
+    return "🛍";
+  },
+};

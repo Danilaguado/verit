@@ -1,10 +1,16 @@
 // ═══════════════════════════════════════════════════
-// APP: PONTO DE ENTRADA
+// PLATAFORMA: AMAZON
 // ═══════════════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", function () {
-  Products.load();
-  document.getElementById("searchInput").addEventListener("input", function () {
-    State.paginaAtual = 1;
-    Products.applyFilters();
-  });
-});
+const Amazon = {
+  getUrl(permalink) {
+    return permalink || null;
+  },
+
+  badge() {
+    return '<span class="platform-badge platform-amazon">🛒 Amazon</span>';
+  },
+
+  icon() {
+    return "🛒";
+  },
+};

@@ -1,10 +1,8 @@
 // ═══════════════════════════════════════════════════
-// APP: PONTO DE ENTRADA
+// MÓDULO: ESTADO GLOBAL
 // ═══════════════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", function () {
-  Products.load();
-  document.getElementById("searchInput").addEventListener("input", function () {
-    State.paginaAtual = 1;
-    Products.applyFilters();
-  });
-});
+const State = {
+  allProducts: [],
+  filteredList: [],
+  paginaAtual: 1,
+};
