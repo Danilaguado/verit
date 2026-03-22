@@ -32,7 +32,6 @@ const CATS = [
 ];
 
 let allProducts = [];
-let modoAtivo = "categoria"; // "categoria" | "todas" | "relampago" | "imbativeis"
 
 const fmt = (n) =>
   "R$ " +
@@ -50,22 +49,6 @@ function setStatus(msg, type) {
   const el = document.getElementById("status");
   el.textContent = msg;
   el.className = "status" + (type ? " " + type : "");
-}
-
-function setTab(tab) {
-  modoAtivo = tab;
-  document
-    .querySelectorAll(".tab-btn")
-    .forEach((b) => b.classList.remove("active"));
-  document.querySelector('[data-tab="' + tab + '"]').classList.add("active");
-
-  const catRow = document.getElementById("catRow");
-  if (tab === "categoria") {
-    catRow.style.display = "";
-  } else {
-    catRow.style.display = "none";
-    buscarProdutos();
-  }
 }
 
 function loadCategories() {
@@ -139,35 +122,27 @@ function renderProducts() {
 }
 
 async function buscarProdutos() {
+  const catId = document.getElementById("categorySelect").value;
+  if (!catId) {
+    setStatus("Selecione uma categoria.", "error");
+    return;
+  }
+
   const btn = document.getElementById("btnBuscar");
-  if (btn) btn.disabled = true;
+  btn.disabled = true;
   document.getElementById("output").innerHTML =
     '<div class="empty-state">Carregando...</div>';
   document.getElementById("countBadge").textContent = "";
   setStatus("Buscando produtos...", "loading");
 
-  let fetchUrl = API_URL;
-
-  if (modoAtivo === "categoria") {
-    const catId = document.getElementById("categorySelect").value;
-    if (!catId) {
-      setStatus("Selecione uma categoria.", "error");
-      if (btn) btn.disabled = false;
-      return;
-    }
-    fetchUrl += "?categoria=" + catId;
-  } else {
-    fetchUrl += "?tipo=" + modoAtivo;
-  }
-
   try {
-    const res = await fetch(fetchUrl);
+    const res = await fetch(`${API_URL}?categoria=${catId}`);
     if (!res.ok) throw new Error("Erro HTTP " + res.status);
     const data = await res.json();
 
     if (data.error) {
       setStatus("Erro: " + data.error, "error");
-      if (btn) btn.disabled = false;
+      btn.disabled = false;
       return;
     }
 
@@ -176,7 +151,7 @@ async function buscarProdutos() {
     if (!allProducts.length) {
       setStatus("Nenhum produto encontrado.", "error");
       document.getElementById("output").innerHTML =
-        '<div class="empty-state"><div class="icon">📭</div>Nenhum produto encontrado.</div>';
+        '<div class="empty-state"><div class="icon">📭</div>Nenhum produto nessa categoria.</div>';
     } else {
       setStatus(allProducts.length + " produtos carregados.");
       renderProducts();
@@ -189,7 +164,7 @@ async function buscarProdutos() {
       "</div>";
   }
 
-  if (btn) btn.disabled = false;
+  btn.disabled = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -200,7 +175,4 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("onlyDiscount")
     .addEventListener("change", renderProducts);
-  document.querySelectorAll(".tab-btn").forEach((b) => {
-    b.addEventListener("click", () => setTab(b.dataset.tab));
-  });
 });
