@@ -1,69 +1,123 @@
 /* ═══════════════════════════════════════════════════
-   HOME: Hero, Carrossel, QuickLinks, Banners
+   HOME: Carrossel, Banners, Seção
 ═══════════════════════════════════════════════════ */
-
-/* ── Hero overlay ── */
-#heroOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: #1a1916;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.4s;
-  cursor: pointer;
-}
 
 /* ── Carrossel ── */
 .carousel-wrap {
-  overflow: hidden;
-  border-radius: 12px;
-  margin: 0.75rem 1.5rem 0;
   position: relative;
+  margin: 0.75rem 0 0; /* sem margin lateral — vai de ponta a ponta */
+  overflow: hidden;
+  border-radius: 0;
 }
+
+/* Track */
 .carousel-track {
   display: flex;
-  transition: transform 0.4s ease;
+  transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
 }
+
+/* Slide */
 .carousel-slide {
   min-width: 100%;
   display: block;
+  flex-shrink: 0;
 }
 .carousel-slide img {
   width: 100%;
-  height: 160px;
+  height: 180px;
   object-fit: cover;
   display: block;
-  border-radius: 12px;
 }
 @media (min-width: 600px) {
   .carousel-slide img {
-    height: 220px;
+    height: 240px;
   }
 }
+
+/* Setas laterais */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(
+    -60%
+  ); /* um pouco acima do centro por causa do gradiente */
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition:
+    background 0.15s,
+    transform 0.15s;
+  backdrop-filter: blur(4px);
+}
+.carousel-arrow:hover {
+  background: #fff;
+  transform: translateY(-60%) scale(1.08);
+}
+.carousel-arrow-left {
+  left: 10px;
+}
+.carousel-arrow-right {
+  right: 10px;
+}
+
+/* Em mobile esconde setas (swipe já funciona) */
+@media (max-width: 500px) {
+  .carousel-arrow {
+    display: none;
+  }
+}
+
+/* Gradiente inferior — conecta com o fundo da app */
+.carousel-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Dots sobre o gradiente */
 .carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  z-index: 6;
   display: flex;
   justify-content: center;
   gap: 6px;
-  padding: 8px 0 0;
 }
 .dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 .dot.active {
-  background: var(--text);
+  background: #fff;
+  width: 18px;
+  border-radius: 3px;
 }
 
-/* ── Banner fixo (abaixo dos quick links) ── */
+/* ── Banner fixo ── */
 .banner-fixo {
   display: block;
-  margin: 0.75rem 1.5rem;
+  margin: 0.75rem 1.25rem;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -74,65 +128,10 @@
   display: block;
 }
 
-/* ── Quick Links ── */
-.quick-links-wrap {
-  padding: 0.75rem 1.5rem 0;
-}
-#quickLinks {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-#quickLinks::-webkit-scrollbar {
-  display: none;
-}
-.quick-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: transform 0.15s;
-}
-.quick-link:hover {
-  transform: translateY(-2px);
-}
-.quick-link.highlight {
-  border-color: #25d366;
-  box-shadow:
-    0 0 10px rgba(37, 211, 102, 0.4),
-    0 0 20px rgba(37, 211, 102, 0.2);
-  animation: glow 2s ease-in-out infinite alternate;
-}
-@keyframes glow {
-  from {
-    box-shadow: 0 0 6px rgba(37, 211, 102, 0.4);
-  }
-  to {
-    box-shadow: 0 0 16px rgba(37, 211, 102, 0.7);
-  }
-}
-.quick-icon {
-  font-size: 22px;
-}
-.quick-label {
-  font-size: 10px;
-  font-family: "DM Mono", monospace;
-  color: var(--muted);
-}
-
 /* ── Banner smartphone ── */
 .banner-smartphone {
   display: block;
-  margin: 0.75rem 1.5rem;
+  margin: 0.5rem 1.25rem;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -143,10 +142,10 @@
   display: block;
 }
 
-/* ── Seção "Confira o que temos" ── */
+/* ── Título de seção ── */
 .section-title {
   font-size: 15px;
   font-weight: 600;
-  padding: 0.75rem 1.5rem 0.25rem;
+  padding: 0.75rem 1.25rem 0.25rem;
   color: var(--text);
 }
