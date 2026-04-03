@@ -7,7 +7,6 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Flash Ofertas</title>
-    <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#e8304a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
@@ -71,8 +70,8 @@
           📊 Sincronizar Tudo
         </button>
 
-        <button onclick="PdfGenerator.generate(State.filteredList)">
-          📄 Baixar PDF
+        <button onclick="SheetsSync.syncProducts(State.allProducts)">
+          📊 Sincronizar Tudo
         </button>
 
         <button class="btn-login" onclick="Auth.openLogin()">👤 Entrar</button>
@@ -192,7 +191,6 @@
     <script src="./modules/search.js"></script>
     <script src="./modules/sheetsSync.js"></script>
     <script src="./modules/pdfGenerator.js"></script>
-    ```
 
     <!-- 4. Componentes -->
     <script src="./components/carousel.js"></script>
