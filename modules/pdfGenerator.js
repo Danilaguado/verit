@@ -1,58 +1,95 @@
 const PdfGenerator = {
   generate(productsList) {
-    // 1. Crear un contenedor temporal oculto
+    // 1. Crear contenedor principal
     const container = document.createElement("div");
+    container.style.width = "794px"; // Ancho estándar A4 a 96dpi
     container.style.padding = "20px";
-    container.style.fontFamily = "sans-serif";
+    container.style.fontFamily =
+      "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
     container.style.backgroundColor = "#ffffff";
+    container.style.color = "#333";
 
+    // 2. Construir el Header con el Logo de Verit
     let html = `
-      <h1 style="text-align:center; color:#e8304a; margin-bottom: 20px;">🔥 Catálogo de Ofertas</h1>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+      <div style="text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; margin-bottom: 30px; border-bottom: 4px solid #f26522;">
+        <img src="assets/logo.png" alt="Verit Logo" style="max-height: 80px; margin-bottom: 15px;" onerror="this.style.display='none'">
+        <h1 style="margin: 0; font-size: 28px; color: #1a1a1a;">Catálogo de Ofertas</h1>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">As melhores oportunidades selecionadas para você</p>
+      </div>
+      
+      <div style="display: flex; flex-wrap: wrap; gap: 2%; justify-content: flex-start;">
     `;
 
+    // 3. Construir las tarjetas de productos (Catálogo)
     productsList.forEach((p) => {
       const expires = p.expires_at
         ? new Date(p.expires_at).toLocaleDateString("pt-BR")
-        : "Indeterminado";
+        : "Tempo limitado";
+      // Asegurar URL segura para imágenes
       const thumb = p.thumbnail
         ? p.thumbnail.replace("http://", "https://")
         : "";
 
       html += `
-        <div style="width: 250px; border: 1px solid #e0ddd6; border-radius: 12px; padding: 15px; text-align: center; page-break-inside: avoid;">
-          <img src="${thumb}" style="width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px;" />
-          <h3 style="font-size: 14px; margin: 0 0 10px 0; color: #1a1916; height: 40px; overflow: hidden;">${p.title}</h3>
+        <div style="width: 31%; margin-bottom: 25px; border: 1px solid #eaeaea; border-radius: 12px; padding: 15px; box-sizing: border-box; text-align: center; page-break-inside: avoid; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
           
-          ${p.original_price ? `<p style="text-decoration: line-through; color: #7a776f; margin: 0; font-size: 12px;">De: R$ ${p.original_price.toFixed(2)}</p>` : ""}
-          <p style="color: #e8304a; font-weight: bold; font-size: 18px; margin: 5px 0;">Por: R$ ${p.price.toFixed(2)}</p>
-          <p style="font-size: 11px; color: #7a776f;">Válido até: ${expires}</p>
+          <div style="height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+            <img src="${thumb}" style="max-width: 100%; max-height: 100%; object-fit: contain;" crossorigin="anonymous" />
+          </div>
           
-          <a href="${Platform.getUrl(p)}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 10px 15px; background: linear-gradient(135deg, #e8304a 0%, #f26522 100%); color: white; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 13px;">🛒 Ir ao produto</a>
+          <h3 style="font-size: 13px; margin: 0 0 15px 0; color: #2c3e50; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+            ${p.title}
+          </h3>
+          
+          <div style="background-color: #fff9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+            ${p.original_price ? `<div style="text-decoration: line-through; color: #95a5a6; font-size: 12px; margin-bottom: 2px;">De: R$ ${p.original_price.toFixed(2)}</div>` : ""}
+            <div style="color: #e74c3c; font-weight: 800; font-size: 18px;">Por: R$ ${p.price.toFixed(2)}</div>
+          </div>
+          
+          <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 15px;">
+            ⏳ Oferta válida até: ${expires}
+          </div>
+          
+          <a href="${p.url || "#"}" target="_blank" style="display: block; width: 100%; padding: 12px 0; background-color: #f26522; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+            🛒 Ir ao produto
+          </a>
         </div>
       `;
     });
 
     html += `</div>`;
+
+    // Pie de página
+    html += `
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; font-size: 11px; color: #999; page-break-inside: avoid;">
+        Catálogo gerado automaticamente por Verit. Preços sujeitos a alteração.
+      </div>
+    `;
+
     container.innerHTML = html;
 
-    // 2. Opciones de html2pdf
+    // 4. Configuración para impresión A4 de alta calidad
     const opt = {
-      margin: 10,
-      filename: "ofertas-verit.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true }, // useCORS permite cargar imágenes externas
+      margin: [10, 10, 10, 10], // top, left, bottom, right
+      filename: "Catalogo_Verit_Ofertas.pdf",
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    // 3. Generar PDF
-    Utils.setStatus("Gerando PDF...", "pdf");
+    Utils.setStatus("Gerando catálogo PDF...", "pdf");
+
     html2pdf()
       .set(opt)
       .from(container)
       .save()
       .then(() => {
-        Utils.setStatus("", ""); // Limpiar status
+        Utils.setStatus("", ""); // Limpiar loader al terminar
+      })
+      .catch((err) => {
+        console.error("Error al generar PDF:", err);
+        alert("Houve um erro ao gerar o PDF.");
+        Utils.setStatus("", "");
       });
   },
 };

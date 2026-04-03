@@ -68,20 +68,42 @@
           </button>
         </div>
 
-        <button
-          class="btn-login"
-          onclick="SheetsSync.syncProducts(State.filteredList)"
-          style="background: #1a7a3a; border-color: #1a7a3a"
-        >
-          📊 Sync Sheets
-        </button>
-        <button
-          class="btn-login"
-          onclick="PdfGenerator.generate(State.filteredList)"
-          style="background: #f26522; border-color: #f26522"
-        >
-          📄 Baixar PDF
-        </button>
+        <div class="actions-bar">
+          <button
+            class="btn-sync"
+            onclick="SheetsSync.syncProducts(State.products)"
+            style="
+              background: #107c41;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: bold;
+              margin-right: 10px;
+            "
+          >
+            📊 Sincronizar Sheets
+          </button>
+
+          <button
+            class="btn-pdf"
+            onclick="
+              PdfGenerator.generate(State.filteredList || State.products)
+            "
+            style="
+              background: #f26522;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: bold;
+            "
+          >
+            📄 Baixar Catálogo PDF
+          </button>
+        </div>
 
         <button class="btn-login" onclick="Auth.openLogin()">👤 Entrar</button>
         <a
