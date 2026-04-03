@@ -10,18 +10,21 @@ const PdfGenerator = {
       return;
     }
 
-    Utils.setStatus("Gerando catálogo PDF...", "pdf");
+    // Avisamos al usuario que puede tardar un poco
+    Utils.setStatus(
+      "Gerando catálogo PDF (isso pode demorar um pouco)...",
+      "pdf",
+    );
 
-    // Seleccionamos máximo 120 productos (10 páginas exactas) para no saturar memoria
-    const printList = list.slice(0, 120);
+    // ¡LÍMITE ELIMINADO! Ahora usamos la lista completa
+    const printList = list;
 
-    // CONFIGURACIÓN EXACTA DE PAGINACIÓN (La matemática perfecta para A4)
+    // CONFIGURACIÓN EXACTA DE PAGINACIÓN
     const ITEMS_PER_ROW = 3;
     const ROWS_PER_PAGE = 4;
     const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE; // 12 productos por hoja
     const totalPages = Math.ceil(printList.length / ITEMS_PER_PAGE);
 
-    // Ancho estricto de 800px para estabilizar el diseño
     let htmlString = `<div style="width: 800px; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">`;
 
     for (let page = 0; page < totalPages; page++) {
@@ -31,7 +34,7 @@ const PdfGenerator = {
         startIndex + ITEMS_PER_PAGE,
       );
 
-      // 1. HEADER (Se repite elegantemente en cada página)
+      // 1. HEADER
       htmlString += `
         <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #f26522;">
           <h1 style="color: #1a1916; margin: 0; font-size: 24px;">Catálogo de Ofertas</h1>
@@ -39,7 +42,7 @@ const PdfGenerator = {
         </div>
       `;
 
-      // 2. FILAS DE PRODUCTOS (Solo para esta página)
+      // 2. FILAS DE PRODUCTOS
       for (let r = 0; r < pageItems.length; r += ITEMS_PER_ROW) {
         const rowItems = pageItems.slice(r, r + ITEMS_PER_ROW);
 
@@ -59,7 +62,6 @@ const PdfGenerator = {
             ? p.thumbnail.replace(/^http:\/\//i, "https://")
             : "";
 
-          // Enlace dinámico a la plataforma (con afiliado)
           const productUrl = Platform.getUrl
             ? Platform.getUrl(p)
             : p.permalink || "#";
@@ -87,24 +89,23 @@ const PdfGenerator = {
           `;
         });
 
-        // Rellenar espacios si la última fila de la página está incompleta (para no dañar la grilla)
         if (rowItems.length < ITEMS_PER_ROW) {
           for (let j = 0; j < ITEMS_PER_ROW - rowItems.length; j++) {
             htmlString += `<div style="width: 32%;"></div>`;
           }
         }
 
-        htmlString += `</div>`; // Fin de la fila
+        htmlString += `</div>`;
       }
 
-      // 3. FOOTER NUMERADO (Queda perfecto al final de cada página)
+      // 3. FOOTER NUMERADO
       htmlString += `
         <div style="text-align: center; margin-top: 15px; color: #999; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px;">
           Página ${page + 1} de ${totalPages} - Catálogo gerado por Verit. Preços sujeitos a alteração.
         </div>
       `;
 
-      // 4. SALTO DE PÁGINA MANUAL (Si no es la última página, usamos la clase nativa de html2pdf)
+      // 4. SALTO DE PÁGINA
       if (page < totalPages - 1) {
         htmlString += `<div class="html2pdf__page-break"></div>`;
       }
@@ -112,11 +113,10 @@ const PdfGenerator = {
 
     htmlString += `</div>`;
 
-    // 5. OPCIONES (Ya no necesitamos que la librería calcule nada de saltos, lo hicimos nosotros)
     const opt = {
-      margin: [10, 10, 10, 10], // Márgenes seguros
+      margin: [10, 10, 10, 10],
       filename: `Catalogo_Ofertas_Verit.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
+      image: { type: "jpeg", quality: 0.95 }, // Calidad ajustada a 95% para hacer el PDF más ligero
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
@@ -126,7 +126,9 @@ const PdfGenerator = {
       console.log("✅ PDF Generado con éxito.");
     } catch (err) {
       console.error("❌ Error al generar PDF:", err);
-      alert("Houve um erro ao gerar o PDF.");
+      alert(
+        "Houve um erro ao gerar o PDF. Talvez a lista seja muito grande para a memória do navegador.",
+      );
     } finally {
       Utils.setStatus("", "");
     }
