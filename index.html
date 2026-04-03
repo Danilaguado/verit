@@ -67,6 +67,22 @@
             </svg>
           </button>
         </div>
+
+        <button
+          class="btn-login"
+          onclick="SheetsSync.syncProducts(State.filteredList)"
+          style="background: #1a7a3a; border-color: #1a7a3a"
+        >
+          📊 Sync Sheets
+        </button>
+        <button
+          class="btn-login"
+          onclick="PdfGenerator.generate(State.filteredList)"
+          style="background: #f26522; border-color: #f26522"
+        >
+          📄 Baixar PDF
+        </button>
+
         <button class="btn-login" onclick="Auth.openLogin()">👤 Entrar</button>
         <a
           href="./tools/extrator-amazon.html"
@@ -182,6 +198,9 @@
     <script src="./modules/filters.js"></script>
     <script src="./modules/products.js"></script>
     <script src="./modules/search.js"></script>
+    <script src="./modules/sheetsSync.js"></script>
+    <script src="./modules/pdfGenerator.js"></script>
+    ```
 
     <!-- 4. Componentes -->
     <script src="./components/carousel.js"></script>
@@ -189,6 +208,11 @@
     <script src="./components/pagination.js"></script>
     <script src="./components/searchPlaceholders.js"></script>
 
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
     <!-- 5. Entrada -->
     <script src="./js/app.js"></script>
   </body>
