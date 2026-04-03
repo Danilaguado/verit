@@ -22,8 +22,8 @@ const PdfGenerator = {
     const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE;
     const totalPages = Math.ceil(printList.length / ITEMS_PER_PAGE);
 
-    // Eliminamos el 'margin: 0 auto' que a veces causa conflictos de centrado en la librería
-    let htmlString = `<div style="width: 800px; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">`;
+    // Contenedor principal: Ancho exacto de 800px y FONDO GRIS (#eef0f4)
+    let htmlString = `<div style="width: 800px; margin: 0 auto; background-color: #eef0f4; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; color: #333; box-sizing: border-box;">`;
 
     for (let page = 0; page < totalPages; page++) {
       const startIndex = page * ITEMS_PER_PAGE;
@@ -32,23 +32,24 @@ const PdfGenerator = {
         startIndex + ITEMS_PER_PAGE,
       );
 
-      // 1. HEADER (SOLO EN LA PRIMERA PÁGINA)
+      // 1. HEADER (SOLO PÁGINA 1)
       if (page === 0) {
         htmlString += `
-          <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #f26522;">
-            <h1 style="color: #1a1916; margin: 0; font-size: 24px;">Catálogo de Ofertas</h1>
-            <p style="color: #e8304a; font-weight: bold; margin: 5px 0 0 0; font-size: 12px;">As melhores oportunidades do dia!</p>
+          <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid #f26522;">
+            <h1 style="color: #1a1916; margin: 0; font-size: 26px;">Catálogo de Ofertas</h1>
+            <p style="color: #e8304a; font-weight: bold; margin: 5px 0 0 0; font-size: 13px;">As melhores oportunidades do dia!</p>
           </div>
         `;
       } else {
-        htmlString += `<div style="height: 20px;"></div>`;
+        htmlString += `<div style="height: 30px;"></div>`;
       }
 
       // 2. FILAS DE PRODUCTOS
       for (let r = 0; r < pageItems.length; r += ITEMS_PER_ROW) {
         const rowItems = pageItems.slice(r, r + ITEMS_PER_ROW);
 
-        htmlString += `<div style="display: flex; justify-content: space-between; margin-bottom: 15px; width: 100%;">`;
+        // Fila centrada
+        htmlString += `<div style="display: flex; justify-content: center; margin-bottom: 15px; width: 100%;">`;
 
         rowItems.forEach((p) => {
           const price = p.price
@@ -68,11 +69,11 @@ const PdfGenerator = {
             ? Platform.getUrl(p)
             : p.permalink || "#";
 
-          // Tarjetas reducidas al 31% para garantizar que la última no se empuje fuera de la hoja
+          // CARDS BLANCAS (#ffffff): Más juntas (margin: 0 8px) y tamaño fijo (width: 235px) para que no se corten.
           htmlString += `
-            <div style="width: 31%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; box-sizing: border-box;">
+            <div style="width: 235px; margin: 0 8px; border: 1px solid #dcdcdc; border-radius: 10px; padding: 12px; text-align: center; background-color: #ffffff; box-shadow: 0 3px 6px rgba(0,0,0,0.06); box-sizing: border-box;">
               
-              <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background: #fff; border-radius: 6px;">
+              <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background-color: #ffffff; border-radius: 6px;">
                 <img src="${thumb}" style="max-width: 100%; max-height: 100px; object-fit: contain;" crossorigin="anonymous">
               </div>
               
@@ -80,21 +81,22 @@ const PdfGenerator = {
                 ${p.title}
               </h4>
               
-              <div style="margin-bottom: 10px; background: #fff9f9; padding: 5px; border-radius: 5px;">
+              <div style="margin-bottom: 12px; background-color: #fef1f3; padding: 5px; border-radius: 5px;">
                 ${oldPrice}<br>
-                <strong style="color: #e8304a; font-size: 15px;">Por: ${price}</strong>
+                <strong style="color: #e8304a; font-size: 16px;">Por: ${price}</strong>
               </div>
               
-              <a href="${productUrl}" target="_blank" style="display: block; background: #f26522; color: white; text-decoration: none; padding: 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
+              <a href="${productUrl}" target="_blank" style="display: block; background-color: #f26522; color: white; text-decoration: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                 🛒 Ir ao produto
               </a>
             </div>
           `;
         });
 
+        // Rellenar espacios para alinear si faltan productos
         if (rowItems.length < ITEMS_PER_ROW) {
           for (let j = 0; j < ITEMS_PER_ROW - rowItems.length; j++) {
-            htmlString += `<div style="width: 31%;"></div>`;
+            htmlString += `<div style="width: 235px; margin: 0 8px; visibility: hidden;"></div>`;
           }
         }
 
@@ -103,7 +105,7 @@ const PdfGenerator = {
 
       // 3. FOOTER NUMERADO
       htmlString += `
-        <div style="text-align: center; margin-top: 15px; color: #999; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+        <div style="text-align: center; margin-top: 15px; color: #777; font-size: 10px; border-top: 1px solid #dcdcdc; padding-top: 10px;">
           Página ${page + 1} de ${totalPages} - Catálogo gerado por Verit. Preços sujeitos a alteração.
         </div>
       `;
@@ -117,15 +119,13 @@ const PdfGenerator = {
     htmlString += `</div>`;
 
     const opt = {
-      // MÁRGENES: [Top, Right, Bottom, Left]
-      // 5mm arriba/abajo y solo 2mm a los lados para exprimir la hoja A4 al máximo
-      margin: [5, 2, 5, 2],
-      filename: `Catalogo_Ofertas_Verit.pdf`,
-      image: { type: "jpeg", quality: 0.9 },
+      // MÁRGENES CERO: Así el fondo gris del contenedor HTML cubrirá la hoja de esquina a esquina
+      margin: [0, 0, 0, 0],
+      filename: `Catalogo_Ofertas.pdf`,
+      image: { type: "jpeg", quality: 0.95 },
       html2canvas: {
         scale: 1.5,
         useCORS: true,
-        // LA MAGIA CONTRA EL ESPACIO EN BLANCO: Forzamos el origen absoluto
         scrollY: 0,
         scrollX: 0,
       },
