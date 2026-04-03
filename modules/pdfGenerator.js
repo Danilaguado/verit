@@ -12,13 +12,13 @@ const PdfGenerator = {
 
     Utils.setStatus("Gerando catálogo PDF...", "pdf");
 
+    // Límite de seguridad para evitar que el navegador se quede sin memoria
     const printList = list.slice(0, 90);
 
-    // 1. Contenedor principal.
     let htmlString = `
       <div style="width: 100%; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">
         
-        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #f26522; page-break-inside: avoid;">
+        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #f26522;">
           <h1 style="color: #1a1916; margin: 0; font-size: 26px;">Catálogo de Ofertas</h1>
           <p style="color: #e8304a; font-weight: bold; margin: 5px 0 0 0; font-size: 13px;">As melhores oportunidades do dia!</p>
         </div>
@@ -26,7 +26,6 @@ const PdfGenerator = {
         <div style="width: 100%; text-align: left;">
     `;
 
-    // 2. Llenar los productos (Usamos inline-block para que la librería no corte la tarjeta)
     printList.forEach((p) => {
       const price = p.price
         ? p.price.toLocaleString("pt-BR", {
@@ -41,11 +40,12 @@ const PdfGenerator = {
         ? p.thumbnail.replace(/^http:\/\//i, "https://")
         : "";
 
-      // SOLUCIÓN AL ENLACE: Usamos tu función nativa que ya le inyecta tu afiliado
+      // Enlace dinámico a la plataforma (con tu tag de afiliado si aplica)
       const productUrl = Platform.getUrl(p) || p.permalink || "#";
 
+      // La propiedad page-break-inside: avoid; aquí es suficiente para que no se corte por la mitad
       htmlString += `
-        <div style="display: inline-block; vertical-align: top; width: 31%; margin: 0 1% 15px 1%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; page-break-inside: avoid; box-sizing: border-box;">
+        <div style="display: inline-block; vertical-align: top; width: 31%; margin: 0 1% 15px 1%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; box-sizing: border-box; page-break-inside: avoid;">
           
           <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background: #fff; border-radius: 6px;">
             <img src="${thumb}" style="max-width: 100%; max-height: 110px; object-fit: contain;" crossorigin="anonymous">
@@ -69,13 +69,12 @@ const PdfGenerator = {
 
     htmlString += `
         </div>
-        <div style="text-align: center; margin-top: 20px; color: #999; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px; page-break-inside: avoid;">
+        <div style="text-align: center; margin-top: 20px; color: #999; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px;">
           Catálogo gerado por Verit. Preços sujeitos a alteração na plataforma de destino.
         </div>
       </div>
     `;
 
-    // 3. Opciones de html2pdf actualizadas
     const opt = {
       margin: [10, 5, 10, 5],
       filename: `Catalogo_Ofertas_Verit.pdf`,
@@ -83,11 +82,10 @@ const PdfGenerator = {
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
 
-      // SOLUCIÓN AL CORTE: Forzamos a la librería a evitar romper elementos con page-break-inside: avoid
-      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      // SOLUCIÓN: Usamos solo el modo 'css' para que respete el page-break-inside de tus tarjetas
+      pagebreak: { mode: "css" },
     };
 
-    // 4. Generar
     try {
       await html2pdf().set(opt).from(htmlString).save();
       console.log("✅ PDF Generado con éxito.");
