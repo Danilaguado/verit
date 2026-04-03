@@ -12,22 +12,21 @@ const PdfGenerator = {
 
     Utils.setStatus("Gerando catálogo PDF...", "pdf");
 
-    // Seleccionamos un máximo de 90 productos
     const printList = list.slice(0, 90);
 
-    // 1. Usamos width: 100% para que se adapte perfectamente a la hoja A4
+    // 1. Contenedor principal.
     let htmlString = `
       <div style="width: 100%; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">
         
-        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #f26522;">
+        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #f26522; page-break-inside: avoid;">
           <h1 style="color: #1a1916; margin: 0; font-size: 26px;">Catálogo de Ofertas</h1>
           <p style="color: #e8304a; font-weight: bold; margin: 5px 0 0 0; font-size: 13px;">As melhores oportunidades do dia!</p>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+        <div style="width: 100%; text-align: left;">
     `;
 
-    // 2. Llenar los productos (Usamos 31.5% de ancho en vez de píxeles)
+    // 2. Llenar los productos (Usamos inline-block para que la librería no corte la tarjeta)
     printList.forEach((p) => {
       const price = p.price
         ? p.price.toLocaleString("pt-BR", {
@@ -42,8 +41,11 @@ const PdfGenerator = {
         ? p.thumbnail.replace(/^http:\/\//i, "https://")
         : "";
 
+      // SOLUCIÓN AL ENLACE: Usamos tu función nativa que ya le inyecta tu afiliado
+      const productUrl = Platform.getUrl(p) || p.permalink || "#";
+
       htmlString += `
-        <div style="width: 31.5%; margin-bottom: 15px; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; page-break-inside: avoid; box-sizing: border-box;">
+        <div style="display: inline-block; vertical-align: top; width: 31%; margin: 0 1% 15px 1%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; page-break-inside: avoid; box-sizing: border-box;">
           
           <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background: #fff; border-radius: 6px;">
             <img src="${thumb}" style="max-width: 100%; max-height: 110px; object-fit: contain;" crossorigin="anonymous">
@@ -58,7 +60,7 @@ const PdfGenerator = {
             <strong style="color: #e8304a; font-size: 15px;">Por: ${price}</strong>
           </div>
           
-          <a href="${p.url || "#"}" target="_blank" style="display: block; background: #f26522; color: white; text-decoration: none; padding: 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
+          <a href="${productUrl}" target="_blank" style="display: block; background: #f26522; color: white; text-decoration: none; padding: 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
             🛒 Ir ao produto
           </a>
         </div>
@@ -75,15 +77,14 @@ const PdfGenerator = {
 
     // 3. Opciones de html2pdf actualizadas
     const opt = {
-      margin: [10, 10, 10, 10], // top, left, bottom, right (márgenes seguros)
+      margin: [10, 5, 10, 5],
       filename: `Catalogo_Ofertas_Verit.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        // Quitamos el windowWidth fijo para que fluya al 100% de la hoja A4
-      },
+      html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+
+      // SOLUCIÓN AL CORTE: Forzamos a la librería a evitar romper elementos con page-break-inside: avoid
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
     };
 
     // 4. Generar
