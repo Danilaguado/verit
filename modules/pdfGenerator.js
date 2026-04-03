@@ -1,95 +1,92 @@
 const PdfGenerator = {
-  generate(productsList) {
-    // 1. Crear contenedor principal
-    const container = document.createElement("div");
-    container.style.width = "794px"; // Ancho estándar A4 a 96dpi
-    container.style.padding = "20px";
-    container.style.fontFamily =
-      "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-    container.style.backgroundColor = "#ffffff";
-    container.style.color = "#333";
+  async generate(productsList) {
+    // Si no hay productos filtrados, usamos todos los de los archivos JS
+    const list =
+      productsList && productsList.length > 0
+        ? productsList
+        : State.allProducts;
 
-    // 2. Construir el Header con el Logo de Verit
+    if (!list || list.length === 0) {
+      alert("⚠️ Não há produtos para gerar o catálogo.");
+      return;
+    }
+
+    Utils.setStatus("Gerando catálogo profissional...", "pdf");
+
+    // Crear contenedor temporal en el cuerpo del documento para que html2canvas lo vea
+    const container = document.createElement("div");
+    container.id = "pdf-template";
+    container.style.position = "absolute";
+    container.style.left = "-9999px"; // Escondido pero presente en el DOM
+    document.body.appendChild(container);
+
     let html = `
-      <div style="text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; margin-bottom: 30px; border-bottom: 4px solid #f26522;">
-        <img src="assets/logo.png" alt="Verit Logo" style="max-height: 80px; margin-bottom: 15px;" onerror="this.style.display='none'">
-        <h1 style="margin: 0; font-size: 28px; color: #1a1a1a;">Catálogo de Ofertas</h1>
-        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">As melhores oportunidades selecionadas para você</p>
-      </div>
-      
-      <div style="display: flex; flex-wrap: wrap; gap: 2%; justify-content: flex-start;">
+      <div style="padding: 30px; font-family: Arial, sans-serif; background: #fff;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 5px solid #f26522; padding-bottom: 20px; margin-bottom: 30px;">
+          <img src="assets/logo.png" style="height: 60px;">
+          <div style="text-align: right;">
+            <h1 style="margin: 0; color: #1a1916; font-size: 24px;">Catálogo de Ofertas</h1>
+            <p style="margin: 5px 0 0 0; color: #f26522; font-weight: bold;">Verit - Sinta a Verdade</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
     `;
 
-    // 3. Construir las tarjetas de productos (Catálogo)
-    productsList.forEach((p) => {
-      const expires = p.expires_at
-        ? new Date(p.expires_at).toLocaleDateString("pt-BR")
-        : "Tempo limitado";
-      // Asegurar URL segura para imágenes
-      const thumb = p.thumbnail
-        ? p.thumbnail.replace("http://", "https://")
+    list.forEach((p) => {
+      const price = p.price
+        ? p.price.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          })
+        : "R$ 0,00";
+      const oldPrice = p.original_price
+        ? `<span style="text-decoration: line-through; color: #999; font-size: 12px;">De: R$ ${p.original_price.toFixed(2)}</span>`
         : "";
 
       html += `
-        <div style="width: 31%; margin-bottom: 25px; border: 1px solid #eaeaea; border-radius: 12px; padding: 15px; box-sizing: border-box; text-align: center; page-break-inside: avoid; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-          
-          <div style="height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
-            <img src="${thumb}" style="max-width: 100%; max-height: 100%; object-fit: contain;" crossorigin="anonymous" />
+        <div style="border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; page-break-inside: avoid; background: #fafafa;">
+          <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+            <img src="${p.thumbnail}" style="max-height: 100%; max-width: 100%; object-fit: contain;" crossorigin="anonymous">
           </div>
-          
-          <h3 style="font-size: 13px; margin: 0 0 15px 0; color: #2c3e50; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-            ${p.title}
-          </h3>
-          
-          <div style="background-color: #fff9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-            ${p.original_price ? `<div style="text-decoration: line-through; color: #95a5a6; font-size: 12px; margin-bottom: 2px;">De: R$ ${p.original_price.toFixed(2)}</div>` : ""}
-            <div style="color: #e74c3c; font-weight: 800; font-size: 18px;">Por: R$ ${p.price.toFixed(2)}</div>
+          <h4 style="font-size: 12px; height: 35px; overflow: hidden; margin: 10px 0; color: #333;">${p.title}</h4>
+          <div style="margin-bottom: 10px;">
+            ${oldPrice}<br>
+            <strong style="color: #e8304a; font-size: 16px;">Por: ${price}</strong>
           </div>
-          
-          <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 15px;">
-            ⏳ Oferta válida até: ${expires}
-          </div>
-          
-          <a href="${p.url || "#"}" target="_blank" style="display: block; width: 100%; padding: 12px 0; background-color: #f26522; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
-            🛒 Ir ao produto
+          <a href="${p.url}" target="_blank" style="display: block; background: #f26522; color: white; text-decoration: none; padding: 8px; border-radius: 5px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+            Ir ao produto
           </a>
         </div>
       `;
     });
 
-    html += `</div>`;
-
-    // Pie de página
-    html += `
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; text-align: center; font-size: 11px; color: #999; page-break-inside: avoid;">
-        Catálogo gerado automaticamente por Verit. Preços sujeitos a alteração.
-      </div>
-    `;
-
+    html += `</div></div>`;
     container.innerHTML = html;
 
-    // 4. Configuración para impresión A4 de alta calidad
     const opt = {
-      margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: "Catalogo_Verit_Ofertas.pdf",
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      margin: 10,
+      filename: `Catalogo_Verit_${new Date().getTime()}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+      },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    Utils.setStatus("Gerando catálogo PDF...", "pdf");
-
-    html2pdf()
-      .set(opt)
-      .from(container)
-      .save()
-      .then(() => {
-        Utils.setStatus("", ""); // Limpiar loader al terminar
-      })
-      .catch((err) => {
-        console.error("Error al generar PDF:", err);
-        alert("Houve um erro ao gerar o PDF.");
+    try {
+      // Esperar un momento para que las imágenes se rendericen en el contenedor
+      setTimeout(async () => {
+        await html2pdf().set(opt).from(container).save();
+        document.body.removeChild(container); // Limpiar
         Utils.setStatus("", "");
-      });
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      Utils.setStatus("Erro ao gerar PDF", "error");
+    }
   },
 };

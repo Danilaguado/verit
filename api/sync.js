@@ -5,9 +5,8 @@ export default async function handler(req, res) {
 
   try {
     const products = req.body.products;
-    const today = new Date().toISOString().split("T")[0]; // Fecha actual YYYY-MM-DD
+    const today = new Date().toLocaleDateString("pt-BR"); // Formato DD/MM/YYYY para el Excel
 
-    // 1. Autenticación
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
@@ -18,60 +17,49 @@ export default async function handler(req, res) {
       },
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
+
     const sheets = google.sheets({ version: "v4", auth });
     const spreadsheetId = process.env.SPREADSHEET_ID;
 
-    // 2. Verificar si la hoja "Products" existe
-    const sheetMeta = await sheets.spreadsheets.get({ spreadsheetId });
-    let sheetExists = sheetMeta.data.sheets.find(
-      (s) => s.properties.title === "Products",
-    );
-
-    if (!sheetExists) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{ addSheet: { properties: { title: "Products" } } }],
-        },
-      });
-      // Inicializar cabeceras
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: "Products!A1:B1",
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [["Entity", "Product"]] },
-      });
-    }
-
-    // 3. Obtener datos actuales
-    const currentData = await sheets.spreadsheets.values.get({
+    // 1. Obtener datos actuales
+    const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: "Products!A:ZZ",
     });
 
-    let rows = currentData.data.values || [["Entity", "Product"]];
+    let rows = response.data.values || [["Entity", "Product"]];
     let headers = rows[0];
 
-    // 4. Asegurar que la columna de hoy exista
+    // 2. Gestionar la columna de la fecha
     let dateColIndex = headers.indexOf(today);
     if (dateColIndex === -1) {
       headers.push(today);
       dateColIndex = headers.length - 1;
     }
 
-    // 5. Mapear y actualizar productos
+    // 3. Crear un mapa de productos existentes (Key: Plataforma + Titulo)
     const productMap = new Map();
-    rows.slice(1).forEach((row, index) => {
-      productMap.set(row[1], index + 1); // Llave: Nombre del producto, Valor: Índice de fila
-    });
+    for (let i = 1; i < rows.length; i++) {
+      const key = `${rows[i][0]}_${rows[i][1]}`;
+      productMap.set(key, i);
+    }
 
+    // 4. Procesar nuevos productos
     products.forEach((p) => {
-      const rowIndex = productMap.get(p.title);
+      const key = `${p.platform}_${p.title}`;
+      const rowIndex = productMap.get(key);
+
       if (rowIndex !== undefined) {
-        // El producto ya existe, actualizar su precio en la columna de hoy
-        rows[rowIndex][dateColIndex] = p.price;
+        // El producto ya existe. Solo agregamos el precio si la celda de hoy está vacía
+        // o si queremos actualizar el precio de la oferta actual.
+        if (
+          !rows[rowIndex][dateColIndex] ||
+          rows[rowIndex][dateColIndex] == ""
+        ) {
+          rows[rowIndex][dateColIndex] = p.price;
+        }
       } else {
-        // Nuevo producto
+        // Es un producto totalmente nuevo en la hoja
         const newRow = new Array(headers.length).fill("");
         newRow[0] = p.platform;
         newRow[1] = p.title;
@@ -80,7 +68,7 @@ export default async function handler(req, res) {
       }
     });
 
-    // 6. Guardar cambios en el Sheet
+    // 5. Actualizar la hoja
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: "Products!A1",
@@ -88,14 +76,8 @@ export default async function handler(req, res) {
       requestBody: { values: rows },
     });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Google Sheets actualizado correctamente.",
-      });
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: error.message });
   }
 }

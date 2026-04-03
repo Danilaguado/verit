@@ -67,20 +67,12 @@
             </svg>
           </button>
         </div>
-        <button
-          class="btn-login"
-          onclick="SheetsSync.syncProducts(State.allProducts)"
-          style="background: #107c41; border-color: #107c41"
-        >
-          📊 Sincronizar Sheets
+        <button onclick="SheetsSync.syncProducts(State.allProducts)">
+          📊 Sincronizar Tudo
         </button>
 
-        <button
-          class="btn-login"
-          onclick="PdfGenerator.generate(State.filteredList)"
-          style="background: #f26522; border-color: #f26522"
-        >
-          📄 Baixar Catálogo PDF
+        <button onclick="PdfGenerator.generate(State.filteredList)">
+          📄 Baixar PDF
         </button>
 
         <button class="btn-login" onclick="Auth.openLogin()">👤 Entrar</button>
