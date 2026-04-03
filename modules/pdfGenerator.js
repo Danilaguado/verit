@@ -15,18 +15,16 @@ const PdfGenerator = {
       "pdf",
     );
 
-    // Usaremos la lista completa, pero si son más de 250, el navegador podría sufrir.
-    // Bajaremos la escala de renderizado para evitar la pantalla en blanco.
     const printList = list;
 
-    // CONFIGURACIÓN EXACTA PARA ENCAJAR PERFECTAMENTE (3 filas x 3 columnas)
+    // 3 filas x 3 columnas (9 productos por hoja) para que no se desborde hacia abajo
     const ITEMS_PER_ROW = 3;
-    const ROWS_PER_PAGE = 3; // Cambiado a 3 para que no se desborde hacia abajo
-    const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE; // 9 productos por hoja
+    const ROWS_PER_PAGE = 3;
+    const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE;
     const totalPages = Math.ceil(printList.length / ITEMS_PER_PAGE);
 
-    // Redujimos el ancho a 780px para dar más margen derecho y evitar cortes
-    let htmlString = `<div style="width: 780px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">`;
+    // Restauramos el ancho a 800px para que ocupe todo el espacio de la hoja
+    let htmlString = `<div style="width: 800px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #333; box-sizing: border-box;">`;
 
     for (let page = 0; page < totalPages; page++) {
       const startIndex = page * ITEMS_PER_PAGE;
@@ -44,7 +42,6 @@ const PdfGenerator = {
           </div>
         `;
       } else {
-        // En las demás páginas, ponemos un pequeño espacio vacío arriba para que no pegue con el borde
         htmlString += `<div style="height: 20px;"></div>`;
       }
 
@@ -52,7 +49,6 @@ const PdfGenerator = {
       for (let r = 0; r < pageItems.length; r += ITEMS_PER_ROW) {
         const rowItems = pageItems.slice(r, r + ITEMS_PER_ROW);
 
-        // justify-content: space-between distribuye el espacio sobrante equitativamente
         htmlString += `<div style="display: flex; justify-content: space-between; margin-bottom: 15px; width: 100%;">`;
 
         rowItems.forEach((p) => {
@@ -73,9 +69,9 @@ const PdfGenerator = {
             ? Platform.getUrl(p)
             : p.permalink || "#";
 
-          // Tarjeta a 31% para asegurar que caben las 3 sin pisar el borde derecho
+          // Tarjetas al 32% para aprovechar al máximo el espacio horizontal
           htmlString += `
-            <div style="width: 31%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; box-sizing: border-box;">
+            <div style="width: 32%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa; box-sizing: border-box;">
               
               <div style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background: #fff; border-radius: 6px;">
                 <img src="${thumb}" style="max-width: 100%; max-height: 100px; object-fit: contain;" crossorigin="anonymous">
@@ -100,7 +96,7 @@ const PdfGenerator = {
         // Rellenar espacios si la última fila de la página está incompleta
         if (rowItems.length < ITEMS_PER_ROW) {
           for (let j = 0; j < ITEMS_PER_ROW - rowItems.length; j++) {
-            htmlString += `<div style="width: 31%;"></div>`;
+            htmlString += `<div style="width: 32%;"></div>`;
           }
         }
 
@@ -114,7 +110,7 @@ const PdfGenerator = {
         </div>
       `;
 
-      // 4. SALTO DE PÁGINA (Para separar las hojas limpiamente)
+      // 4. SALTO DE PÁGINA
       if (page < totalPages - 1) {
         htmlString += `<div class="html2pdf__page-break"></div>`;
       }
@@ -123,10 +119,11 @@ const PdfGenerator = {
     htmlString += `</div>`;
 
     const opt = {
-      margin: [10, 15, 10, 15], // [Top, Right, Bottom, Left] - Aumentamos margen derecho e izquierdo
-      filename: `Catalogo_Ofertas_Verit.pdf`,
+      // MÁRGENES DEL PDF: [Arriba, Derecha, Abajo, Izquierda]
+      // Le dejamos 10mm arriba/abajo y solo 4mm a los lados para que use toda la hoja
+      margin: [10, 4, 10, 4],
+      filename: `Catalogo_Ofertas.pdf`,
       image: { type: "jpeg", quality: 0.9 },
-      // SOLUCIÓN PANTALLA BLANCA: Bajar la escala a 1.5 ahorra un 30% de memoria y evita el colapso.
       html2canvas: { scale: 1.5, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
